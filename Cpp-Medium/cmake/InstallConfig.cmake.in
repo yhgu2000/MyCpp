@@ -1,0 +1,7 @@
+@PACKAGE_INIT@
+
+# 让上层项目包含本项目导出的目标
+include("${CMAKE_CURRENT_LIST_DIR}/@EXPORT_TARGETS@.cmake")
+
+# 给上层项目传递外部依赖
+include("${CMAKE_CURRENT_LIST_DIR}/deps.cmake")

@@ -1,0 +1,5 @@
+# 让上层项目包含本项目导出的目标
+include("${CMAKE_CURRENT_BINARY_DIR}/${EXPORT_TARGETS}.cmake")
+
+# 给上层项目传递外部依赖
+include("${CMAKE_CURRENT_SOURCE_DIR}/deps.cmake")

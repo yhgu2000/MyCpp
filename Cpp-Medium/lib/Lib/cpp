@@ -1,0 +1,30 @@
+/**
+ * @brief 这个文件用于辅助跨平台编译，是最底层的包含文件
+ */
+
+#pragma once
+
+#include <cstdint>
+#include <new>
+
+namespace Lib {
+
+#ifndef _MSC_VER
+
+// 已知 clang 14 的标准库中没有定义这两个版本的函数
+
+inline void
+operator delete(void* p, std::size_t)
+{
+  return ::operator delete(p);
+}
+
+inline void
+operator delete(void* ptr, std::size_t, std::align_val_t al)
+{
+  return ::operator delete(ptr, al);
+}
+
+#endif
+
+}
