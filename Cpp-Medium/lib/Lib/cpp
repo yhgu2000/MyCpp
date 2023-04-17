@@ -7,8 +7,6 @@
 #include <cstdint>
 #include <new>
 
-namespace Lib {
-
 #ifndef _MSC_VER
 
 // 已知 clang 14 的标准库中没有定义这两个版本的函数
@@ -26,5 +24,3 @@ operator delete(void* ptr, std::size_t, std::align_val_t al)
 }
 
 #endif
-
-}

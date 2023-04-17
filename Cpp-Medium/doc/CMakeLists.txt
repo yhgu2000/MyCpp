@@ -5,7 +5,7 @@ if(DOXYGEN_FOUND)
   add_custom_command(OUTPUT targets.dot targets.png
     COMMAND ${CMAKE_COMMAND} --graphviz=targets.dot ..
     COMMAND Doxygen::dot -Tpng targets.dot -o targets.png
-    DEPENDS ${CMAKE_BINARY_DIR}/CMakeFiles/generate.stamp
+    DEPENDS ${CMAKE_BINARY_DIR}/CMakeFiles/TargetDirectories.txt
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   )
 
