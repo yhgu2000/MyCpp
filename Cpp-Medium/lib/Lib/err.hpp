@@ -21,7 +21,7 @@ public:
 
 public:
   /**
-   * @brief 用于调试，将错误信息打印到标准输出。
+   * @brief 用于方便调试，将错误信息打印到标准输出。
    */
   void cout()
   {
@@ -33,14 +33,14 @@ public:
   /**
    * @brief 构造并返回人类可读的错误信息字符串。
    */
-  virtual std::string info() const noexcept { return what(); }
+  virtual std::string info() const noexcept = 0;
 
 public:
   ///@name exception interface
   ///@{
   virtual const char* what() const noexcept override
   {
-    return "class ::Lib::Err;";
+    return typeid(*this).name();
   }
   ///@}
 
