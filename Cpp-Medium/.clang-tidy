@@ -18,6 +18,7 @@ CheckOptions:
   # Class
   readability-identifier-naming.ClassCase: CamelCase
   readability-identifier-naming.ClassIgnoredRegexp: "^_|_$"
+  readability-identifier-naming.ClassMethodIgnoredRegexp: "^get_|^set_"
 
   # Constant
   readability-identifier-naming.ConstantCase: CamelCase
@@ -34,7 +35,7 @@ CheckOptions:
 
   # GlobalVariable
   readability-identifier-naming.GlobalVariablePrefix: g
-  readability-identifier-naming.GlobalVariableIgnoredRegexp: "^_|_$|^t" # thread_local
+  readability-identifier-naming.GlobalVariableIgnoredRegexp: "^_|_$|^gt" # thread_local
 
   # Macro
   readability-identifier-naming.MacroDefinitionCase: UPPER_CASE
@@ -55,7 +56,7 @@ CheckOptions:
 
   # StaticVariable
   readability-identifier-naming.StaticVariablePrefix: s
-  readability-identifier-naming.StaticVariableIgnoredRegexp: "^_|_$"
+  readability-identifier-naming.StaticVariableIgnoredRegexp: "^_|_|^st$" # thread_local
 
   # Union
   readability-identifier-naming.UnionCase: CamelCase
@@ -64,5 +65,3 @@ CheckOptions:
   # Variable
   readability-identifier-naming.VariableCase: camelBack
   readability-identifier-naming.VariableIgnoredRegexp: "^_|_$"
-
-  # 设计思想：向标识符中加入作用域信息

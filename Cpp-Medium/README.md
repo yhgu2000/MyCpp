@@ -27,3 +27,7 @@
    本模板使用 Doxygen 生成库的 API 文档。
 
    在 [doc](./doc) 目录下创建其它 Markdown 文档，然后加到 doxygen 目标中。
+
+## 编码规范
+
+见 [doc/coding_conventions.md](doc/coding_conventions.md) 。
