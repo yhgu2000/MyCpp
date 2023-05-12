@@ -17,13 +17,13 @@ class Str;
 class Err : public std::exception
 {
 public:
-  Err() {}
+  Err() = default;
 
 public:
   /**
    * @brief 用于方便调试，将错误信息打印到标准输出。
    */
-  void cout()
+  void cout() const
   {
 #ifndef NDEBUG
     std::cout << info() << std::endl;
@@ -38,10 +38,7 @@ public:
 public:
   ///@name exception interface
   ///@{
-  virtual const char* what() const noexcept override
-  {
-    return typeid(*this).name();
-  }
+  const char* what() const noexcept override { return typeid(*this).name(); }
   ///@}
 
 #ifdef _MSC_VER
@@ -83,14 +80,14 @@ public:
 public:
   ///@name exception interface
   ///@{
-  virtual const char* what() const noexcept override { return _what; }
+  const char* what() const noexcept override { return _what; }
   ///@}
 #endif
 
 public:
   ///@name Err interface
   ///@{
-  virtual std::string info() const noexcept override { return what(); }
+  std::string info() const noexcept override { return what(); }
   ///@}
 };
 
@@ -116,14 +113,14 @@ public:
 public:
   ///@name exception interface
   ///@{
-  virtual const char* what() const noexcept override { return _what.c_str(); }
+  const char* what() const noexcept override { return _what.c_str(); }
   ///@}
 #endif
 
 public:
   ///@name Err interface
   ///@{
-  virtual std::string info() const noexcept override { return _what; }
+  std::string info() const noexcept override { return _what; }
   ///@}
 };
 
@@ -139,21 +136,9 @@ public:
   }
 
 public:
-  ///@name exception interface
-  ///@{
-  virtual const char* what() const noexcept override
-  {
-    return std::strerror(_code);
-  }
-  ///@}
-
-public:
   ///@name Err interface
   ///@{
-  virtual std::string info() const noexcept override
-  {
-    return std::strerror(_code);
-  }
+  std::string info() const noexcept override;
   ///@}
 };
 

@@ -1,0 +1,68 @@
+# TODO clang-tidy 在 17 版本后支持以列表形式书写，过两年就改进！
+Checks: "-*\
+  ,clang-*\
+  ,concurrency-*\
+  ,performance-*\
+  ,portability-*\
+  ,readability-*\
+  ,modernize-*\
+  ,-readability-braces-around-statements\
+  ,-readability-identifier-length\
+  ,-readability-magic-numbers\
+  ,-readability-redundant-access-specifiers\
+  ,-readability-implicit-bool-conversion\
+  ,-modernize-use-trailing-return-type\
+  ,-modernize-use-nodiscard\
+  ,-modernize-avoid-c-arrays"
+CheckOptions:
+  # Class
+  readability-identifier-naming.ClassCase: CamelCase
+  readability-identifier-naming.ClassIgnoredRegexp: "^_|_$"
+
+  # Constant
+  readability-identifier-naming.ConstantCase: CamelCase
+  readability-identifier-naming.ConstantPrefix: k
+  readability-identifier-naming.ConstantIgnoredRegexp: "^_|_$"
+
+  # Enum
+  readability-identifier-naming.EnumCase: CamelCase
+  readability-identifier-naming.EnumIgnoredRegexp: "^_|_$"
+
+  # Function
+  readability-identifier-naming.FunctionCase: lower_case
+  readability-identifier-naming.FunctionIgnoredRegexp: "^_|_$"
+
+  # GlobalVariable
+  readability-identifier-naming.GlobalVariablePrefix: g
+  readability-identifier-naming.GlobalVariableIgnoredRegexp: "^_|_$|^t" # thread_local
+
+  # Macro
+  readability-identifier-naming.MacroDefinitionCase: UPPER_CASE
+  readability-identifier-naming.MacroDefinitionIgnoredRegexp: "^_|_$|self"
+
+  # Member
+  readability-identifier-naming.MemberCase: CamelBack
+  readability-identifier-naming.MemberPrefix: m
+  readability-identifier-naming.MemberIgnoredRegexp: "^_|_$"
+
+  # Namespace
+  readability-identifier-naming.NamespaceCase: Camel_Snake_Case
+  readability-identifier-naming.NamespaceIgnoredRegexp: "^_|_$|err"
+
+  # Parameter
+  readability-identifier-naming.ParameterCase: camelBack
+  readability-identifier-naming.ParameterIgnoredRegexp: "^_|_$"
+
+  # StaticVariable
+  readability-identifier-naming.StaticVariablePrefix: s
+  readability-identifier-naming.StaticVariableIgnoredRegexp: "^_|_$"
+
+  # Union
+  readability-identifier-naming.UnionCase: CamelCase
+  readability-identifier-naming.UnionIgnoredRegexp: "^_|_$"
+
+  # Variable
+  readability-identifier-naming.VariableCase: camelBack
+  readability-identifier-naming.VariableIgnoredRegexp: "^_|_$"
+
+  # 设计思想：向标识符中加入作用域信息

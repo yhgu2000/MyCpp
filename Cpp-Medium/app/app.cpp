@@ -1,5 +1,6 @@
 #include "project.h"
 #include <Lib/hpp>
+#include <array>
 #include <boost/program_options.hpp>
 #include <iomanip>
 #include <iostream>
@@ -12,13 +13,13 @@ int
 subcmd(int argc, char* argv[])
 {
   po::options_description od("'subcmd' Options");
-  od.add_options()                //
-    ("help,h", "print help info") //
-    ("output,o", "output path")   //
+  od.add_options()                                        //
+    ("help,h", "print help info")                         //
+    ("output,o", po::value<std::string>(), "output path") //
     ;
 
   po::positional_options_description pod;
-  pod.add("output,o", 1);
+  pod.add("output", 1);
 
   po::variables_map vmap;
   po::store(
@@ -39,8 +40,8 @@ subcmd(int argc, char* argv[])
 
 struct SubCmdFunc
 {
-  const char *name, *info;
-  int (*func)(int argc, char* argv[]);
+  const char *mName, *mInfo;
+  int (*mFunc)(int argc, char* argv[]);
 };
 
 const SubCmdFunc kSubCmdFuncs[] = {
@@ -66,7 +67,7 @@ try {
   std::vector<std::string> opts{ argv[0] };
   for (int i = 1; i < argc; ++i) {
     if (argv[i][0] == '-')
-      opts.push_back(argv[i]);
+      opts.emplace_back(argv[i]);
     else
       break;
   }
@@ -81,11 +82,11 @@ try {
   po::notify(vmap);
 
   if (vmap.count("version")) {
-    std::cout << "EFA Command-Line App"
+    std::cout << "Command-Line App"
                  "\n"
                  "\nBuilt: " __TIME__ " (" __DATE__ ")"
-                 "\nEFA: " UnnamedProject_VERSION "\n"
-                 "\nCopyright (C) 2023 Gu Yuhao. All Rights Reserved."
+                 "\nProject: " UnnamedProject_VERSION "\n"
+                 "\nCopyright (C) 2023 Yuhao Gu. All Rights Reserved."
               << std::endl;
     return 0;
   }
@@ -95,7 +96,7 @@ try {
               << "\n"
                  "Sub Commands:\n";
     for (auto&& i : kSubCmdFuncs)
-      std::cout << "  " << std::left << std::setw(12) << i.name << i.info
+      std::cout << "  " << std::left << std::setw(12) << i.mName << i.mInfo
                 << '\n';
     std::cout << "\n"
                  "[HINT: use '<subcmd> --help' to get help for sub commands.]\n"
@@ -106,8 +107,8 @@ try {
   if (opts.size() < argc) {
     std::string cmd = argv[opts.size()];
     for (auto&& i : kSubCmdFuncs) {
-      if (cmd == i.name)
-        return i.func(argc - opts.size(), argv + opts.size());
+      if (cmd == i.mName)
+        return i.mFunc(argc - opts.size(), argv + opts.size());
     }
     std::cout << "invalid sub command '" << cmd << "'." << std::endl;
     return 1;
