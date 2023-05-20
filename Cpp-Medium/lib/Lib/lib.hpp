@@ -2,6 +2,6 @@
 
 #include "cpp"
 
-namespace LIB_NAME {
+namespace Lib {
 
 }

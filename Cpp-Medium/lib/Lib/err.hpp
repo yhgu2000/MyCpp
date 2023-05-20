@@ -12,7 +12,7 @@ namespace Lib {
 namespace err {
 class Lit;
 class Str;
-}
+} // namespace err
 
 class Err : public std::exception
 {
@@ -20,15 +20,12 @@ public:
   Err() = default;
 
 public:
+#ifndef NDEBUG
   /**
    * @brief 用于方便调试，将错误信息打印到标准输出。
    */
-  void cout() const
-  {
-#ifndef NDEBUG
-    std::cout << info() << std::endl;
+  void cout() const { std::cout << info() << std::endl; }
 #endif
-  }
 
   /**
    * @brief 构造并返回人类可读的错误信息字符串。
@@ -38,7 +35,7 @@ public:
 public:
   ///@name exception interface
   ///@{
-  const char* what() const noexcept override { return typeid(*this).name(); }
+  const char* what() const noexcept override;
   ///@}
 
 #ifdef _MSC_VER
@@ -59,7 +56,6 @@ class Lit : public Err
 {
 public:
 #ifdef _MSC_VER
-
   Lit(const char* what)
     : Err(what)
   {
@@ -69,10 +65,10 @@ public:
   using std::exception::what;
 
 #else
-  const char* _what;
+  const char* mWhat;
 
   Lit(const char* what)
-    : _what(what)
+    : mWhat(what)
   {
     assert(what != nullptr);
   }
@@ -80,58 +76,25 @@ public:
 public:
   ///@name exception interface
   ///@{
-  const char* what() const noexcept override { return _what; }
+  const char* what() const noexcept override { return mWhat; }
   ///@}
 #endif
 
 public:
   ///@name Err interface
   ///@{
-  std::string info() const noexcept override { return what(); }
+  std::string info() const noexcept override;
   ///@}
 };
 
 class Str : public Err
 {
 public:
-  std::string _what;
+  std::string mWhat;
 
 public:
-#ifdef _MSC_VER
   Str(std::string what)
-    : Err(what.c_str())
-    , _what(std::move(what))
-  {
-  }
-
-#else
-  Str(std::string what)
-    : _what(std::move(what))
-  {
-  }
-
-public:
-  ///@name exception interface
-  ///@{
-  const char* what() const noexcept override { return _what.c_str(); }
-  ///@}
-#endif
-
-public:
-  ///@name Err interface
-  ///@{
-  std::string info() const noexcept override { return _what; }
-  ///@}
-};
-
-class Errno : public Err
-{
-public:
-  int _code;
-
-public:
-  Errno(int code)
-    : _code(code)
+    : mWhat(std::move(what))
   {
   }
 
@@ -142,6 +105,23 @@ public:
   ///@}
 };
 
-}
+class Errno : public Err
+{
+public:
+  int mCode;
 
-}
+public:
+  Errno(int code)
+    : mCode(code)
+  {
+  }
+
+public:
+  ///@name Err interface
+  ///@{
+  std::string info() const noexcept override;
+  ///@}
+};
+
+} // namespace err
+} // namespace Lib

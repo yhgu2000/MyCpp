@@ -28,6 +28,46 @@
 
    在 [doc](./doc) 目录下创建其它 Markdown 文档，然后加到 doxygen 目标中。
 
+## 构建与使用
+
+1. 复制 `env.cmake.example` 为 `env.cmake` ，然后按照你的本地环境修改其中的路径。
+
+2. 运行 CMake 配置过程：
+
+   ```bash
+   mkdir build
+   cd build
+   cmake ..
+   ```
+
+   > 默认构建的是 Debug 版本，如果想构建其他版本（如 Release），请设置 [`CMAKE_BUILD_TYPE` 变量](https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html)。
+
+3. 构建所有目标：
+
+   ```bash
+   cmake --build .
+   ```
+
+   > 如果想构建项目的单元测试，需要安装 [Boost.Test](https://www.boost.org) 库。
+
+   > 如果想构建项目的文档，需要安装 [Doxygen](https://www.doxygen.nl) 和 [Graphviz](https://graphviz.org)。
+
+4. 打包发布：
+
+   项目使用 CPack，可以生成各种格式的包文件，详请参阅[官方文档](https://cmake.org/cmake/help/latest/manual/cpack.1.html)。
+
+   打包构建产物（可用于二次开发）：
+
+   ```bash
+   cpack -G ZIP
+   ```
+
+   打包源码：
+
+   ```bash
+   cpack --config CPackSourceConfig.cmake
+   ```
+
 ## 编码规范
 
-见 [doc/coding_conventions.md](doc/coding_conventions.md) 。
+见 [doc/coding_standards.md](doc/coding_standards.md) 。

@@ -1,4 +1,3 @@
-# TODO clang-tidy 在 17 版本后支持以列表形式书写，过两年就改进！
 Checks: "-*\
   ,clang-*\
   ,concurrency-*\
@@ -14,11 +13,18 @@ Checks: "-*\
   ,-modernize-use-trailing-return-type\
   ,-modernize-use-nodiscard\
   ,-modernize-avoid-c-arrays"
+  # TODO clang-tidy 在 17 版本后支持以列表形式书写，过两年就改进！
+
 CheckOptions:
   # Class
   readability-identifier-naming.ClassCase: CamelCase
   readability-identifier-naming.ClassIgnoredRegexp: "^_|_$"
   readability-identifier-naming.ClassMethodIgnoredRegexp: "^get_|^set_"
+
+  # ClassMember
+  readability-identifier-naming.ClassMemberCase: CamelBack
+  readability-identifier-naming.ClassMemberPrefix: g
+  readability-identifier-naming.ClassMemberIgnoredRegexp: "^_|_$|^gt" # thread_local
 
   # Constant
   readability-identifier-naming.ConstantCase: CamelCase
@@ -34,6 +40,7 @@ CheckOptions:
   readability-identifier-naming.FunctionIgnoredRegexp: "^_|_$"
 
   # GlobalVariable
+  readability-identifier-naming.StaticVariableCase: CamelCase
   readability-identifier-naming.GlobalVariablePrefix: g
   readability-identifier-naming.GlobalVariableIgnoredRegexp: "^_|_$|^gt" # thread_local
 
@@ -46,6 +53,10 @@ CheckOptions:
   readability-identifier-naming.MemberPrefix: m
   readability-identifier-naming.MemberIgnoredRegexp: "^_|_$"
 
+  # Method
+  readability-identifier-naming.MethodCase: lower_case
+  readability-identifier-naming.MethodIgnoredRegexp: "^_|_$|^get_|^set_"
+
   # Namespace
   readability-identifier-naming.NamespaceCase: Camel_Snake_Case
   readability-identifier-naming.NamespaceIgnoredRegexp: "^_|_$|err"
@@ -55,8 +66,9 @@ CheckOptions:
   readability-identifier-naming.ParameterIgnoredRegexp: "^_|_$"
 
   # StaticVariable
+  readability-identifier-naming.StaticVariableCase: CamelCase
   readability-identifier-naming.StaticVariablePrefix: s
-  readability-identifier-naming.StaticVariableIgnoredRegexp: "^_|_|^st$" # thread_local
+  readability-identifier-naming.StaticVariableIgnoredRegexp: "^_|_$|^st" # thread_local
 
   # Union
   readability-identifier-naming.UnionCase: CamelCase
