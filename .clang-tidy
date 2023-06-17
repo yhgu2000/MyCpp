@@ -19,7 +19,7 @@ CheckOptions:
   # Class
   readability-identifier-naming.ClassCase: CamelCase
   readability-identifier-naming.ClassIgnoredRegexp: "^_|_$"
-  readability-identifier-naming.ClassMethodIgnoredRegexp: "^get_|^set_"
+  readability-identifier-naming.ClassMethodIgnoredRegexp: "^_|_$|^get_|^set_"
 
   # ClassMember
   readability-identifier-naming.ClassMemberCase: CamelBack

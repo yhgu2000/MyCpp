@@ -87,16 +87,12 @@ public:
   ///@}
 };
 
-class Str : public Err
+class Str
+  : public Err
+  , public std::string
 {
 public:
-  std::string mWhat;
-
-public:
-  Str(std::string what)
-    : mWhat(std::move(what))
-  {
-  }
+  using std::string::string;
 
 public:
   ///@name Err interface
@@ -124,4 +120,5 @@ public:
 };
 
 } // namespace err
+
 } // namespace Lib

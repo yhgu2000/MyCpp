@@ -20,7 +20,7 @@ set(CMAKE_DEBUG_POSTFIX "-d")
 
 # 项目自己的 CMake 模块包含路径
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake)
-include(deps) # 引入项目依赖
+include(depend) # 引入项目依赖
 
 # 项目信息头文件
 configure_file(cmake/project.h.in ${PROJECT_BINARY_DIR}/cmake/project.h)

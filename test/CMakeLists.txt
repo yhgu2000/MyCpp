@@ -35,3 +35,5 @@ add_executable(test_test test.cpp)
 target_link_libraries(test_test PRIVATE test_util)
 
 target_compile_definitions(test_test PRIVATE BOOST_TEST_MODULE=Test)
+
+add_test(NAME TEST_TEST COMMAND test_test)
