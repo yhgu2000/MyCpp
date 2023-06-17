@@ -1,4 +1,13 @@
 #
+# 时间戳生成 CMake 脚本
+#
+configure_file(timestamp.cmake.in
+  ${CMAKE_CURRENT_BINARY_DIR}/timestamp.cmake @ONLY
+)
+
+
+
+#
 # 就地导出使用方式
 #
 configure_file(ExportConfig.cmake.in ${CMAKE_PROJECT_NAME}Config.cmake)
@@ -29,7 +38,7 @@ install(EXPORT ${EXPORT_TARGETS}
   NAMESPACE ${CMAKE_PROJECT_NAME}::
 )
 
-install(FILES deps.cmake
+install(FILES depend.cmake
   ${CMAKE_CURRENT_BINARY_DIR}/install/${PROJECT_NAME}Config.cmake
   ${CMAKE_CURRENT_BINARY_DIR}/install/${PROJECT_NAME}Version.cmake
   DESTINATION cmake

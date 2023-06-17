@@ -14,4 +14,4 @@ split(size_t n)
   return ret;
 }
 
-}
+} // namespace genrand

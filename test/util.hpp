@@ -99,4 +99,4 @@ index(std::size_t end)
 std::vector<double>
 split(std::size_t n);
 
-}
+} // namespace genrand

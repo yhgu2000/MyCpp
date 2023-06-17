@@ -1,7 +1,7 @@
 // 此文件从 project.h.in 自动生成，直接修改本文件无效！
 
-#ifndef _PROJECT_H_
-#define _PROJECT_H_
+#ifndef _${PROJECT_NAME}_H_
+#define _${PROJECT_NAME}_H_
 
 #define ${PROJECT_NAME}_VERSION         "${PROJECT_VERSION}"
 
@@ -16,4 +16,4 @@
 #define ${PROJECT_NAME}_SOURCE_DIR      "${PROJECT_SOURCE_DIR}"
 #define ${PROJECT_NAME}_BINARY_DIR      "${PROJECT_BINARY_DIR}"
 
-#endif // _PROJECT_H_
+#endif // _${PROJECT_NAME}_H_

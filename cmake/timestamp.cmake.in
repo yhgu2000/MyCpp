@@ -1,0 +1,7 @@
+string(TIMESTAMP _timestamp UTC)
+
+file(WRITE timestamp.h "\
+// 这个文件在构建时自动生成，包含构建时的时间信息。
+
+#define @PROJECT_NAME@_TIMESTAMP \"${_timestamp}\"
+")

@@ -1,4 +1,6 @@
 #include "project.h"
+#include "timestamp.h"
+
 #include <Lib/hpp>
 #include <array>
 #include <boost/program_options.hpp>
@@ -84,7 +86,7 @@ try {
   if (vmap.count("version")) {
     std::cout << "Command-Line App"
                  "\n"
-                 "\nBuilt: " __TIME__ " (" __DATE__ ")"
+                 "\nBuilt: " UnnamedProject_TIMESTAMP
                  "\nProject: " UnnamedProject_VERSION "\n"
                  "\nCopyright (C) 2023 Yuhao Gu. All Rights Reserved."
               << std::endl;

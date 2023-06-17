@@ -12,10 +12,6 @@ if(NOT Boost_UNIT_TEST_FRAMEWORK_FOUND)
   return()
 endif()
 
-if(NOT Boost_USE_STATIC_LIBS)
-  add_compile_definitions(BOOST_TEST_DYN_LINK)
-endif()
-
 
 
 #
