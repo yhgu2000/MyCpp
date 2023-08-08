@@ -1,6 +1,6 @@
 #include "util.hpp"
 
-namespace genrand {
+namespace randgen {
 
 thread_local std::default_random_engine gRand{ std::random_device()() };
 
@@ -14,4 +14,4 @@ split(size_t n)
   return ret;
 }
 
-} // namespace genrand
+} // namespace randgen

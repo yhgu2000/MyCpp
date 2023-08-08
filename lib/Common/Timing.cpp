@@ -1,6 +1,5 @@
 #include "Timing.hpp"
 #include <boost/json.hpp>
-#include <cassert>
 #include <iostream>
 #include <regex>
 #include <vector>
@@ -18,7 +17,8 @@ operator<<(std::ostream& out, const Common::Timing& prof)
     for (auto i = stack.size(); i > 1; --i)
       out << '\t';
 
-    if (i.mInfo == &Timing::Scope::gLeaveInfo && !stack.empty() &&
+    auto info = i.get_info();
+    if (info == &Timing::Scope::gLeaveInfo && !stack.empty() &&
         stack.back()->mTag == i.mTag) {
       out << i.mTag << " [" << (i.mTime - stack.back()->mTime) << ']';
       stack.pop_back();
@@ -28,11 +28,11 @@ operator<<(std::ostream& out, const Common::Timing& prof)
       if (!stack.empty())
         out << '\t';
       out << i.mTag << " [" << (i.mTime - last) << ']';
-      if (i.mInfo) {
-        if (i.mInfo == &Timing::Scope::gEnterInfo)
+      if (info) {
+        if (info == &Timing::Scope::gEnterInfo)
           stack.push_back(&i);
         else
-          out << " : " << i.mInfo->info();
+          out << " : " << info->info();
       }
       out << '\n';
     }
@@ -140,8 +140,8 @@ Timing::Scope::LeaveInfo Timing::Scope::gLeaveInfo;
 
 Timing::Entry::~Entry() noexcept
 {
-  if (mOwned)
-    delete mInfo;
+  if (info_owned())
+    delete get_info();
 
   // 无需原子操作，因为析构操作只发生在最后持有 shared_ptr 的单个线程中。
   auto* next = mNext.load(std::memory_order_relaxed);

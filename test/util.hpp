@@ -18,9 +18,20 @@ using namespace std::string_literals;
 #define niming(n, code) COMMON_NIMING(n, code)
 
 /**
+ * @brief 用于阻止一个求值被编译器优化掉。
+ */
+template<typename T>
+inline T&&
+noopt(T&& a)
+{
+  asm volatile("" : "+r"(a));
+  return a;
+}
+
+/**
  * @brief 随机数生成工具
  */
-namespace genrand {
+namespace randgen {
 
 extern thread_local std::default_random_engine gRand;
 
@@ -57,4 +68,4 @@ index(std::size_t end)
 std::vector<double>
 split(std::size_t n);
 
-} // namespace genrand
+} // namespace randgen

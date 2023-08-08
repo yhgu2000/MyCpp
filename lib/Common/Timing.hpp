@@ -2,6 +2,7 @@
 
 #include "cpp"
 #include <atomic>
+#include <cassert>
 #include <chrono>
 #include <iomanip>
 #include <memory>
@@ -82,7 +83,7 @@ public:
   /**
    * @brief 用于给记录提供额外信息的接口类。
    */
-  struct Info
+  struct alignas(alignof(std::size_t)) Info
   {
     virtual ~Info() = default;
 
@@ -108,7 +109,6 @@ public:
   class Entry;
   class Iterator;
   class Scope;
-  class Profiled;
 
 public:
   /**
@@ -117,8 +117,7 @@ public:
    * @param json JSON 对象。
    * @param tags 用于保存标签字符串所有权的集合容器。
    *
-   * @note \p tags 不能为 unordered_map，以免发生重哈希时 Timing
-   * 中的指针失效！
+   * @note \p tags 不能为 unordered，以免发生重哈希时返回对象中的指针失效！
    */
   static Timing from_json(const bj::value& json,
                           std::set<std::string>& tags) noexcept(false);
@@ -195,16 +194,14 @@ private:
 
 /**
  * @brief 记录条目。
- * 
- * TODO 压缩类大小，并且定制内存分配器以减少计时开销。
+ *
+ * TODO 或许定制内存分配器可以更快？
  */
 class Timing::Entry
 {
   friend class Timing;
 
 public:
-  bool mOwned;             ///< 是否持有 mInfo
-  Info* mInfo;             ///< 附加信息
   const char* mTag;        ///< 计时标签
   Clock::time_point mTime; ///< 计时点
 
@@ -216,7 +213,53 @@ public:
 
   ~Entry() noexcept;
 
+public:
+  /**
+   * @brief 获取记录上的附加消息，如果没有则返回空。
+   */
+  std::string info()
+  {
+    if (mInfo)
+      return mInfo->info();
+    return {};
+  }
+
+  /**
+   * @brief 获取消息对象
+   *
+   * @return 可能为空。
+   */
+  Info* get_info()
+  {
+    return reinterpret_cast<Info*>(reinterpret_cast<std::size_t>(mInfo) &
+                                   ~std::size_t(1));
+  }
+
+  /**
+   * @brief 设置消息对象。
+   *
+   * 这个方法不会检查是否持有原消息对象的所有权，调用方应当在调用前检查并释放。
+   *
+   * @param info 消息对象。
+   * @param owned 是否转移所有权，如果 info 为空，则必须为 false。
+   */
+  void set_info(Info* info, bool owned)
+  {
+    assert(info || !owned); // info为空时，owned必须为false
+    mInfo = info;
+    reinterpret_cast<std::size_t&>(mInfo) |= owned;
+  }
+
+  /**
+   * @brief 检查是否持有消息对象的所有权。
+   */
+  bool info_owned()
+  {
+    return reinterpret_cast<std::size_t>(mInfo) & std::size_t(1);
+  }
+
 private:
+  Info* mInfo; ///< 附加信息，最低位为所有权标记
   std::atomic<Entry*> mNext;
 
 private:
@@ -227,12 +270,12 @@ private:
         Info* info,
         bool owned,
         Entry* next)
-    : mOwned(owned)
-    , mInfo(info)
+    : mInfo(info)
     , mTag(tag)
     , mTime(time)
     , mNext(next)
   {
+    reinterpret_cast<std::size_t&>(mInfo) |= int(owned);
   }
 };
 
