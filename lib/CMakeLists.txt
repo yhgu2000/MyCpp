@@ -3,19 +3,19 @@
 
 
 #
-# 库目标模板，被设计为可以与 Cmake 项目分离使用，支持直接拷贝出源码集成到上层项目中。
+# 公共支持库，包含一些常用的功能。
 #
-file(GLOB Lib_src Lib/*)
+file(GLOB _src Common/*)
 
-add_library(Lib ${Lib_src})
+add_library(Common ${_src})
 
-target_include_directories(Lib
+target_include_directories(Common
   INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     $<INSTALL_INTERFACE:include>
 )
 
-target_link_libraries(Lib PUBLIC Boost::json)
+target_link_libraries(Common PUBLIC Boost::json)
 
-install(TARGETS Lib EXPORT ${EXPORT_TARGETS})
-install(DIRECTORY Lib TYPE INCLUDE PATTERN "*.cpp" EXCLUDE)
+install(TARGETS Common EXPORT ${EXPORT_TARGETS})
+install(DIRECTORY Common TYPE INCLUDE PATTERN "*.cpp" EXCLUDE)

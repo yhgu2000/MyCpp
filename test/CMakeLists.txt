@@ -20,7 +20,7 @@ endif()
 add_library(test_util OBJECT util.hpp util.cpp)
 
 target_link_libraries(test_util
-  PUBLIC Boost::boost Boost::unit_test_framework
+  PUBLIC Common Boost::boost Boost::unit_test_framework
 )
 
 target_include_directories(test_util PUBLIC .)

@@ -58,6 +58,12 @@
    例外情况：
 
    - 类成员的 `get`、`set` 方法为成员名加上 `get_`、`set_` 前缀
+   - 对于 Qt 的信号和槽，分别为 `s_`、`w_` 加上具体描述，例如：
+
+     ```cpp
+     void s_someButton_clickedTwice();
+     void w_someButton_clickedTwice();
+     ```
 
 7. 变量
 

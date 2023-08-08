@@ -3,6 +3,7 @@
 #include "cpp"
 #include <atomic>
 #include <chrono>
+#include <iomanip>
 #include <memory>
 #include <ostream>
 #include <set>
@@ -11,17 +12,61 @@ namespace boost::json {
 class value;
 };
 
-namespace Lib {
+namespace Common {
 class Timing;
+}
+
+/**
+ * @brief 计时宏，宏参数可以是表达式，也可以是语句块
+ */
+#define COMMON_TIMING(code)                                                    \
+  [&]() {                                                                      \
+    auto __timing_begin__ = std::chrono::high_resolution_clock::now();         \
+    code;                                                                      \
+    auto __timing_end__ = std::chrono::high_resolution_clock::now();           \
+    return __timing_end__ - __timing_begin__;                                  \
+  }()
+
+/**
+ * @brief n 次计时宏，宏参数可以是表达式，也可以是语句块
+ */
+#define COMMON_NIMING(n, code)                                                 \
+  [&]() {                                                                      \
+    auto __niming_begin__ = std::chrono::high_resolution_clock::now();         \
+    for (std::size_t __niming_n__ = 0; __niming_n__ < n; ++__niming_n__)       \
+      code;                                                                    \
+    auto __niming_end__ = std::chrono::high_resolution_clock::now();           \
+    return __niming_end__ - __niming_begin__;                                  \
+  }()
+
+/**
+ * @brief 以易读形式输出时间间隔
+ */
+template<typename R, typename P>
+std::ostream&
+operator<<(std::ostream& out, const std::chrono::duration<R, P>& dura)
+{
+  out << std::fixed << std::setprecision(2);
+  double count =
+    std::chrono::duration_cast<std::chrono::nanoseconds>(dura).count();
+  if (count < 10000)
+    out << count << "ns";
+  else if ((count /= 1000) < 10000)
+    out << count << "us";
+  else if ((count /= 1000) < 10000)
+    out << count << "ms";
+  else
+    out << count / 1000 << "s";
+  return out;
 }
 
 /**
  * @brief 标准输出流打印函数，以缩进文本的方式打印输出。
  */
 std::ostream&
-operator<<(std::ostream& out, const Lib::Timing& prof);
+operator<<(std::ostream& out, const Common::Timing& prof);
 
-namespace Lib {
+namespace Common {
 
 namespace bj = boost::json;
 
@@ -134,8 +179,8 @@ protected:
   /**
    * @brief 在子类中重载这个方法以监视计时。
    *
-   * 默认实现对标签进行筛选并打印到 cout。筛选方式是将 TIMING_MONITOR_FILTER 解释
-   * 为正则表达式，如果该环境变量未设置，则不打印任何信息。
+   * 默认实现对标签进行筛选并打印到 cout。筛选方式是将 TIMING_MONITOR_FILTER
+   * 解释为 ECMAScript 正则表达式，如果该环境变量未设置，则不打印任何信息。
    *
    * @param ent 本次计时构造的记录条目。
    */
@@ -150,6 +195,8 @@ private:
 
 /**
  * @brief 记录条目。
+ * 
+ * TODO 压缩类大小，并且定制内存分配器以减少计时开销。
  */
 class Timing::Entry
 {
@@ -269,29 +316,9 @@ private:
   const char* mTag;
 };
 
-namespace sc = std::chrono;
+} // namespace Common
 
-template<typename T1, typename T2>
-static std::ostream&
-operator<<(std::ostream& out, const sc::duration<T1, T2>& dura)
-{
-  auto count = sc::duration_cast<sc::nanoseconds>(dura).count();
-
-  if (count < 10000)
-    out << count << "ns";
-  else if ((count /= 1000) < 10000)
-    out << count << "us";
-  else if ((count /= 1000) < 10000)
-    out << count << "ms";
-  else
-    out << count / 1000 << "s";
-
-  return out;
-}
-
-} // namespace Lib
-
-namespace Lib {
+namespace Common {
 
 inline Timing::Timing()
   : mHead(new Entry(Clock::now(), nullptr, nullptr, false, nullptr))
@@ -316,4 +343,4 @@ Timing::end() const noexcept
   return Iterator(nullptr);
 }
 
-} // namespace Lib
+} // namespace Common

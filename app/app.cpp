@@ -117,7 +117,7 @@ try {
   }
 }
 
-catch (Lib::Err& e) {
+catch (Common::Err& e) {
   std::cout << "\nERROR! " << e.what() << "\n" << e.info() << std::endl;
   return -3;
 }

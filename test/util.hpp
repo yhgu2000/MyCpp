@@ -3,6 +3,7 @@
 #include <boost/test/unit_test.hpp>
 
 #include "project.h"
+#include <Common/Timing.hpp>
 #include <chrono>
 #include <iomanip>
 #include <iostream>
@@ -13,51 +14,8 @@
 using namespace std::chrono_literals;
 using namespace std::string_literals;
 
-using HRC = std::chrono::high_resolution_clock;
-
-/**
- * @brief 计时宏，宏参数可以是表达式，也可以是语句块
- */
-#define timing(code)                                                           \
-  [&]() {                                                                      \
-    auto __timing_begin__ = HRC::now();                                        \
-    code;                                                                      \
-    auto __timing_end__ = HRC::now();                                          \
-    return __timing_end__ - __timing_begin__;                                  \
-  }()
-
-/**
- * @brief n 次计时宏，宏参数可以是表达式，也可以是语句块
- */
-#define niming(n, code)                                                        \
-  [&]() {                                                                      \
-    auto __niming_begin__ = HRC::now();                                        \
-    for (std::size_t __niming_n__ = 0; __niming_n__ < n; ++__niming_n__)       \
-      code;                                                                    \
-    auto __niming_end__ = HRC::now();                                          \
-    return __niming_end__ - __niming_begin__;                                  \
-  }()
-
-/**
- * @brief 以易读形式输出时间间隔
- */
-template<typename R, typename P>
-std::ostream&
-operator<<(std::ostream& out, const std::chrono::duration<R, P>& dura)
-{
-  out << std::fixed << std::setprecision(2);
-  double count =
-    std::chrono::duration_cast<std::chrono::nanoseconds>(dura).count();
-  if (count < 10000)
-    out << count << "ns";
-  else if ((count /= 1000) < 10000)
-    out << count << "us";
-  else if ((count /= 1000) < 10000)
-    out << count << "ms";
-  else
-    out << count / 1000 << "s";
-  return out;
-}
+#define timing(code) COMMON_TIMING(code)
+#define niming(n, code) COMMON_NIMING(n, code)
 
 /**
  * @brief 随机数生成工具

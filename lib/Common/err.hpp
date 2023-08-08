@@ -7,7 +7,7 @@
 #include <iostream>
 #include <string>
 
-namespace Lib {
+namespace Common {
 
 namespace err {
 class Lit;
@@ -121,4 +121,4 @@ public:
 
 } // namespace err
 
-} // namespace Lib
+} // namespace Common

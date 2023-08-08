@@ -10,6 +10,7 @@ Checks: "-*\
   ,-readability-magic-numbers\
   ,-readability-redundant-access-specifiers\
   ,-readability-implicit-bool-conversion\
+  ,-readability-qualified-auto\
   ,-modernize-use-trailing-return-type\
   ,-modernize-use-nodiscard\
   ,-modernize-avoid-c-arrays"
@@ -19,7 +20,7 @@ CheckOptions:
   # Class
   readability-identifier-naming.ClassCase: CamelCase
   readability-identifier-naming.ClassIgnoredRegexp: "^_|_$"
-  readability-identifier-naming.ClassMethodIgnoredRegexp: "^_|_$|^get_|^set_"
+  readability-identifier-naming.ClassMethodIgnoredRegexp: "^get_|^set_"
 
   # ClassMember
   readability-identifier-naming.ClassMemberCase: CamelBack
@@ -55,7 +56,7 @@ CheckOptions:
 
   # Method
   readability-identifier-naming.MethodCase: lower_case
-  readability-identifier-naming.MethodIgnoredRegexp: "^_|_$|^get_|^set_"
+  readability-identifier-naming.MethodIgnoredRegexp: "^_|_$|^get_|^set_|^s_|^w_"
 
   # Namespace
   readability-identifier-naming.NamespaceCase: Camel_Snake_Case

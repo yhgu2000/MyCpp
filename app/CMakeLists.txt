@@ -19,7 +19,7 @@ target_include_directories(timestamp INTERFACE ${CMAKE_CURRENT_BINARY_DIR})
 
 
 #
-# 应用目标模板
+# 命令行应用模板
 #
 add_executable(app app.cpp)
 

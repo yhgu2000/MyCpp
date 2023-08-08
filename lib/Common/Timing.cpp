@@ -3,13 +3,14 @@
 #include <cassert>
 #include <iostream>
 #include <regex>
-#include <stdlib.h>
 #include <vector>
 
+namespace sc = std::chrono;
+
 std::ostream&
-operator<<(std::ostream& out, const Lib::Timing& prof)
+operator<<(std::ostream& out, const Common::Timing& prof)
 {
-  using namespace Lib;
+  using namespace Common;
 
   std::vector<Timing::Entry*> stack;
   auto last = prof.initial();
@@ -42,7 +43,7 @@ operator<<(std::ostream& out, const Lib::Timing& prof)
   return out;
 }
 
-namespace Lib {
+namespace Common {
 
 Timing
 Timing::from_json(const bj::value& json,
@@ -166,4 +167,4 @@ Timing::Scope::LeaveInfo::info() noexcept
   return "LEAVE";
 }
 
-} // namespace Lib
+} // namespace Common
