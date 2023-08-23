@@ -23,7 +23,4 @@ target_include_directories(timestamp INTERFACE ${CMAKE_CURRENT_BINARY_DIR})
 #
 add_executable(app app.cpp)
 
-set(Boost_USE_STATIC_LIBS ON)
-find_package(Boost REQUIRED COMPONENTS program_options)
-
-target_link_libraries(app PUBLIC timestamp Lib Boost::program_options)
+target_link_libraries(app PUBLIC timestamp My Boost::program_options)

@@ -7,9 +7,9 @@
 namespace sc = std::chrono;
 
 std::ostream&
-operator<<(std::ostream& out, const Common::Timing& prof)
+operator<<(std::ostream& out, const My::Timing& prof)
 {
-  using namespace Common;
+  using namespace My;
 
   std::vector<Timing::Entry*> stack;
   auto last = prof.initial();
@@ -43,7 +43,7 @@ operator<<(std::ostream& out, const Common::Timing& prof)
   return out;
 }
 
-namespace Common {
+namespace My {
 
 Timing
 Timing::from_json(const bj::value& json,
@@ -167,4 +167,4 @@ Timing::Scope::LeaveInfo::info() noexcept
   return "LEAVE";
 }
 
-} // namespace Common
+} // namespace My

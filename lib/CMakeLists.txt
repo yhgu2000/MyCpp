@@ -3,19 +3,19 @@
 
 
 #
-# 公共支持库，包含一些常用的功能。
+# “我的”公共支持库，包含一些常用的代码。
 #
-file(GLOB _src Common/*)
+file(GLOB _src My/*)
 
-add_library(Common ${_src})
+add_library(My ${_src})
 
-target_include_directories(Common
+target_include_directories(My
   INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     $<INSTALL_INTERFACE:include>
 )
 
-target_link_libraries(Common PUBLIC Boost::json)
+target_link_libraries(My PUBLIC Boost::json)
 
-install(TARGETS Common EXPORT ${EXPORT_TARGETS})
-install(DIRECTORY Common TYPE INCLUDE PATTERN "*.cpp" EXCLUDE)
+install(TARGETS My EXPORT ${EXPORT_TARGETS})
+install(DIRECTORY My TYPE INCLUDE PATTERN "*.cpp" EXCLUDE)

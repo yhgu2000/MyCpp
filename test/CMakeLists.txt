@@ -1,4 +1,4 @@
-# test 目标名前统一添加 test_ 前缀
+# test 目标名前统一添加 test+ 前缀
 
 if(NOT BUILD_TESTING)
   return()
@@ -17,27 +17,27 @@ endif()
 #
 # 测试实用工具
 #
-add_library(test_util OBJECT util.hpp util.cpp)
+add_library(testutil OBJECT util.hpp util.cpp)
 
-target_link_libraries(test_util
-  PUBLIC Common Boost::boost Boost::unit_test_framework
+target_link_libraries(testutil
+  PUBLIC My Boost::boost Boost::unit_test_framework
 )
 
-target_include_directories(test_util PUBLIC .)
+target_include_directories(testutil PUBLIC .)
 
 
 
 #
 # 测试目标模板
 #
-add_executable(test_test test.cpp)
+add_executable(test+ test.cpp)
 
-target_link_libraries(test_test PRIVATE test_util)
+target_link_libraries(test+ PRIVATE testutil)
 
-target_compile_definitions(test_test PRIVATE BOOST_TEST_MODULE=Test)
+target_compile_definitions(test+ PRIVATE BOOST_TEST_MODULE=test)
 
-add_test(NAME TEST_TEST COMMAND test_test)
+add_test(NAME test+ COMMAND test+)
 
 
 
-add_subdirectory(Common)
+add_subdirectory(My)

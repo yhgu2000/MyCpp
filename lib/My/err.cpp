@@ -1,6 +1,6 @@
 #include "err.hpp"
 
-namespace Common {
+namespace My {
 
 using namespace std::string_literals;
 
@@ -42,4 +42,4 @@ Errno::info() const noexcept
 
 } // namespace err
 
-} // namespace Common
+} // namespace My

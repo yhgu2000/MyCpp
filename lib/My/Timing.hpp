@@ -13,9 +13,9 @@ namespace boost::json {
 class value;
 };
 
-namespace Common {
+namespace My {
 class Timing;
-}
+} // namespace My
 
 /**
  * @brief 计时宏，宏参数可以是表达式，也可以是语句块
@@ -65,9 +65,9 @@ operator<<(std::ostream& out, const std::chrono::duration<R, P>& dura)
  * @brief 标准输出流打印函数，以缩进文本的方式打印输出。
  */
 std::ostream&
-operator<<(std::ostream& out, const Common::Timing& prof);
+operator<<(std::ostream& out, const My::Timing& prof);
 
-namespace Common {
+namespace My {
 
 namespace bj = boost::json;
 
@@ -359,9 +359,9 @@ private:
   const char* mTag;
 };
 
-} // namespace Common
+} // namespace My
 
-namespace Common {
+namespace My {
 
 inline Timing::Timing()
   : mHead(new Entry(Clock::now(), nullptr, nullptr, false, nullptr))
@@ -386,4 +386,4 @@ Timing::end() const noexcept
   return Iterator(nullptr);
 }
 
-} // namespace Common
+} // namespace My

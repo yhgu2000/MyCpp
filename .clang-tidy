@@ -20,12 +20,12 @@ CheckOptions:
   # Class
   readability-identifier-naming.ClassCase: CamelCase
   readability-identifier-naming.ClassIgnoredRegexp: "^_|_$"
-  readability-identifier-naming.ClassMethodIgnoredRegexp: "^get_|^set_"
+  readability-identifier-naming.ClassMethodIgnoredRegexp: "^_|_$"
 
   # ClassMember
   readability-identifier-naming.ClassMemberCase: CamelBack
   readability-identifier-naming.ClassMemberPrefix: g
-  readability-identifier-naming.ClassMemberIgnoredRegexp: "^_|_$|^gt" # thread_local
+  readability-identifier-naming.ClassMemberIgnoredRegexp: "^_|_$"
 
   # Constant
   readability-identifier-naming.ConstantCase: CamelCase
@@ -43,11 +43,11 @@ CheckOptions:
   # GlobalVariable
   readability-identifier-naming.StaticVariableCase: CamelCase
   readability-identifier-naming.GlobalVariablePrefix: g
-  readability-identifier-naming.GlobalVariableIgnoredRegexp: "^_|_$|^gt" # thread_local
+  readability-identifier-naming.GlobalVariableIgnoredRegexp: "^_|_$"
 
   # Macro
   readability-identifier-naming.MacroDefinitionCase: UPPER_CASE
-  readability-identifier-naming.MacroDefinitionIgnoredRegexp: "^_|_$|self"
+  readability-identifier-naming.MacroDefinitionIgnoredRegexp: "^_|self|_$"
 
   # Member
   readability-identifier-naming.MemberCase: CamelBack
@@ -56,11 +56,11 @@ CheckOptions:
 
   # Method
   readability-identifier-naming.MethodCase: lower_case
-  readability-identifier-naming.MethodIgnoredRegexp: "^_|_$|^get_|^set_|^s_|^w_"
+  readability-identifier-naming.MethodIgnoredRegexp: "^_|^(get|set|on|s|w)_|_$"
 
   # Namespace
   readability-identifier-naming.NamespaceCase: Camel_Snake_Case
-  readability-identifier-naming.NamespaceIgnoredRegexp: "^_|_$|err"
+  readability-identifier-naming.NamespaceIgnoredRegexp: "^_|err|std|_$"
 
   # Parameter
   readability-identifier-naming.ParameterCase: camelBack
@@ -69,7 +69,7 @@ CheckOptions:
   # StaticVariable
   readability-identifier-naming.StaticVariableCase: CamelCase
   readability-identifier-naming.StaticVariablePrefix: s
-  readability-identifier-naming.StaticVariableIgnoredRegexp: "^_|_$|^st" # thread_local
+  readability-identifier-naming.StaticVariableIgnoredRegexp: "^_|_$"
 
   # Union
   readability-identifier-naming.UnionCase: CamelCase

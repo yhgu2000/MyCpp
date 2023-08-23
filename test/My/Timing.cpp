@@ -1,6 +1,6 @@
 #include "util.hpp"
 
-using namespace Common;
+using namespace My;
 
 /**
  * @brief 测试计时器的性能

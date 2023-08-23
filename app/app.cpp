@@ -1,7 +1,7 @@
 #include "project.h"
 #include "timestamp.h"
 
-#include <Lib/hpp>
+#include <My/hpp>
 #include <array>
 #include <boost/program_options.hpp>
 #include <iomanip>
@@ -117,7 +117,7 @@ try {
   }
 }
 
-catch (Common::Err& e) {
+catch (My::Err& e) {
   std::cout << "\nERROR! " << e.what() << "\n" << e.info() << std::endl;
   return -3;
 }

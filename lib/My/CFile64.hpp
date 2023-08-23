@@ -16,7 +16,7 @@ ftruncate(int, std::int64_t) noexcept;
 
 #endif
 
-namespace Common {
+namespace My {
 
 /**
  * @brief 包装自 std::FILE*、跨平台的 64 位二进制文件读写类。
@@ -281,10 +281,10 @@ operator>>(const CFile64& f, std::vector<T>& vec) noexcept(false)
   return f;
 }
 
-} // namespace Common
+} // namespace My
 
 inline void
-Common::CFile64::read(void* buffer,
+My::CFile64::read(void* buffer,
                    std::int64_t size,
                    std::int64_t count,
                    std::int64_t addr) const noexcept(false)
@@ -294,7 +294,7 @@ Common::CFile64::read(void* buffer,
 }
 
 inline void
-Common::CFile64::write(const void* buffer,
+My::CFile64::write(const void* buffer,
                     std::int64_t size,
                     std::int64_t count,
                     std::int64_t addr) const noexcept(false)

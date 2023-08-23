@@ -16,7 +16,7 @@ include(CTest)  # CTest 需要在顶层包含
 set(EXPORT_TARGETS ${PROJECT_NAME}Targets)
 
 # 设置调试配置后缀
-set(CMAKE_DEBUG_POSTFIX "-d")
+set(CMAKE_DEBUG_POSTFIX "+d")
 
 # 项目自己的 CMake 模块包含路径
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake)
