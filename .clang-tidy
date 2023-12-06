@@ -1,3 +1,6 @@
+HeaderFileExtensions:         ['hpp']
+# ImplementationFileExtensions: ['cpp']
+
 Checks: "-*\
   ,clang-*\
   ,concurrency-*\

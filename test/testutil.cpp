@@ -1,4 +1,10 @@
-#include "util.hpp"
+#include "testutil.hpp"
+
+void
+noopt_impl(void* a)
+{
+  assert(!a);
+}
 
 namespace randgen {
 

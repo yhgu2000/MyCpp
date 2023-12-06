@@ -1,15 +1,30 @@
 #include "project.h"
 #include "timestamp.h"
 
-#include <My/hpp>
+static const char kVersionInfo[] =
+  "CLI Example\n"
+  "\n"
+  "Built: " UnnamedProject_TIMESTAMP "\n"
+  "Project: " UnnamedProject_VERSION "\n"
+  "Copyright (C) 2023 Yuhao Gu. All Rights Reserved.";
+
+#include "po.hpp"
+
 #include <array>
-#include <boost/program_options.hpp>
 #include <iomanip>
 #include <iostream>
 
-using namespace std::string_literals;
+#include <My/err.hpp>
+#include <My/log.hpp>
+#include <My/util.hpp>
 
-namespace po = boost::program_options;
+using namespace My::util;
+
+// ========================================================================== //
+// 子命令示例
+// ========================================================================== //
+
+namespace {
 
 int
 subcmd(int argc, char* argv[])
@@ -40,16 +55,51 @@ subcmd(int argc, char* argv[])
   return 0;
 }
 
-struct SubCmdFunc
+} // namespace
+
+// ========================================================================== //
+// 配置日志
+// ========================================================================== //
+
+#include <boost/log/utility/setup/common_attributes.hpp>
+#include <boost/log/utility/setup/console.hpp>
+
+namespace {
+
+int gLogLevel = My::log::Level::noti;
+
+void
+init_log()
+{
+  boost::log::add_common_attributes();
+  boost::log::add_console_log(std::clog,
+                              boost::log::keywords::format = &My::log::format);
+  boost::log::core::get()->set_filter(
+    [](const boost::log::attribute_value_set& attrs) {
+      return attrs["Severity"].extract<My::log::Level>() >= gLogLevel;
+    });
+}
+
+} // namespace
+
+// ========================================================================== //
+// 主函数
+// ========================================================================== //
+
+namespace {
+
+struct SubCmd
 {
   const char *mName, *mInfo;
   int (*mFunc)(int argc, char* argv[]);
 };
 
-const SubCmdFunc kSubCmdFuncs[] = {
+const SubCmd kSubCmds[] = {
   { "subcmd", "subcmd example", &subcmd },
   // TODO
 };
+
+} // namespace
 
 int
 main(int argc, char* argv[])
@@ -58,9 +108,10 @@ try {
   od.add_options()                          //
     ("version,v", "print version info")     //
     ("help,h", "print help info")           //
+    ("log", povd(gLogLevel), "log level")   //
     ("...",                                 //
      po::value<std::vector<std::string>>(), //
-     "sub arguments")                       //
+     "other arguments")                     //
     ;
 
   po::positional_options_description pod;
@@ -81,23 +132,12 @@ try {
                   .allow_unregistered()
                   .run();
   po::store(parsed, vmap);
-  po::notify(vmap);
-
-  if (vmap.count("version")) {
-    std::cout << "Command-Line App"
-                 "\n"
-                 "\nBuilt: " UnnamedProject_TIMESTAMP
-                 "\nProject: " UnnamedProject_VERSION "\n"
-                 "\nCopyright (C) 2023 Yuhao Gu. All Rights Reserved."
-              << std::endl;
-    return 0;
-  }
 
   if (vmap.count("help") || argc == 1) {
     std::cout << od
               << "\n"
                  "Sub Commands:\n";
-    for (auto&& i : kSubCmdFuncs)
+    for (auto&& i : kSubCmds)
       std::cout << "  " << std::left << std::setw(12) << i.mName << i.mInfo
                 << '\n';
     std::cout << "\n"
@@ -106,9 +146,18 @@ try {
     return 0;
   }
 
+  if (vmap.count("version")) {
+    std::cout << kVersionInfo << std::endl;
+    return 0;
+  }
+
+  // 如果必须的选项没有指定，在这里会发生错误，因此 version 和 help
+  // 选项要放在前面。
+  po::notify(vmap);
+
   if (opts.size() < argc) {
     std::string cmd = argv[opts.size()];
-    for (auto&& i : kSubCmdFuncs) {
+    for (auto&& i : kSubCmds) {
       if (cmd == i.mName)
         return i.mFunc(argc - opts.size(), argv + opts.size());
     }
@@ -118,15 +167,16 @@ try {
 }
 
 catch (My::Err& e) {
-  std::cout << "\nERROR! " << e.what() << "\n" << e.info() << std::endl;
+  std::cout << e.what() << ": " << e.info() << std::endl;
   return -3;
 }
 
 catch (std::exception& e) {
-  std::cout << "\nERROR! " << e.what() << std::endl;
+  std::cout << "Exception: " << e.what() << std::endl;
   return -2;
 }
 
 catch (...) {
+  std::cout << "UNKNOWN EXCEPTION" << std::endl;
   return -1;
 }

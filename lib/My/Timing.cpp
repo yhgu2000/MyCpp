@@ -1,9 +1,12 @@
 #include "Timing.hpp"
+#include "util.hpp"
+
 #include <boost/json.hpp>
 #include <iostream>
 #include <regex>
 #include <vector>
 
+using namespace My::util;
 namespace sc = std::chrono;
 
 std::ostream&

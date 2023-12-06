@@ -1,6 +1,8 @@
 #pragma once
 
 #include "cpp"
+
+#include <boost/system/error_code.hpp>
 #include <cassert>
 #include <cstring>
 #include <exception>
@@ -43,7 +45,7 @@ private:
   friend class err::Lit;
   friend class err::Str;
 
-  Err(const char* msg)
+  Err(const char* const msg)
     : std::exception(msg)
   {
   }
@@ -56,7 +58,7 @@ class Lit : public Err
 {
 public:
 #ifdef _MSC_VER
-  Lit(const char* what)
+  Lit(const char* const what)
     : Err(what)
   {
     assert(what != nullptr);
@@ -65,9 +67,9 @@ public:
   using std::exception::what;
 
 #else
-  const char* mWhat;
+  const char* const mWhat;
 
-  Lit(const char* what)
+  Lit(const char* const what)
     : mWhat(what)
   {
     assert(what != nullptr);
@@ -94,6 +96,11 @@ class Str
 public:
   using std::string::string;
 
+  Str(std::string what)
+    : std::string(std::move(what))
+  {
+  }
+
 public:
   ///@name Err interface
   ///@{
@@ -104,11 +111,29 @@ public:
 class Errno : public Err
 {
 public:
-  int mCode;
+  const int mCode;
 
 public:
   Errno(int code)
     : mCode(code)
+  {
+  }
+
+public:
+  ///@name Err interface
+  ///@{
+  std::string info() const noexcept override;
+  ///@}
+};
+
+class BoostEC : public Err
+{
+public:
+  const boost::system::error_code mEc;
+
+public:
+  BoostEC(boost::system::error_code ec)
+    : mEc(std::move(ec))
   {
   }
 

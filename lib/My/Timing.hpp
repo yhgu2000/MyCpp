@@ -6,7 +6,6 @@
 #include <chrono>
 #include <iomanip>
 #include <memory>
-#include <ostream>
 #include <set>
 
 namespace boost::json {
@@ -20,7 +19,7 @@ class Timing;
 /**
  * @brief 计时宏，宏参数可以是表达式，也可以是语句块
  */
-#define COMMON_TIMING(code)                                                    \
+#define MY_TIMING(code)                                                        \
   [&]() {                                                                      \
     auto __timing_begin__ = std::chrono::high_resolution_clock::now();         \
     code;                                                                      \
@@ -31,7 +30,7 @@ class Timing;
 /**
  * @brief n 次计时宏，宏参数可以是表达式，也可以是语句块
  */
-#define COMMON_NIMING(n, code)                                                 \
+#define MY_NIMING(n, code)                                                     \
   [&]() {                                                                      \
     auto __niming_begin__ = std::chrono::high_resolution_clock::now();         \
     for (std::size_t __niming_n__ = 0; __niming_n__ < n; ++__niming_n__)       \
@@ -39,27 +38,6 @@ class Timing;
     auto __niming_end__ = std::chrono::high_resolution_clock::now();           \
     return __niming_end__ - __niming_begin__;                                  \
   }()
-
-/**
- * @brief 以易读形式输出时间间隔
- */
-template<typename R, typename P>
-std::ostream&
-operator<<(std::ostream& out, const std::chrono::duration<R, P>& dura)
-{
-  out << std::fixed << std::setprecision(2);
-  double count =
-    std::chrono::duration_cast<std::chrono::nanoseconds>(dura).count();
-  if (count < 10000)
-    out << count << "ns";
-  else if ((count /= 1000) < 10000)
-    out << count << "us";
-  else if ((count /= 1000) < 10000)
-    out << count << "ms";
-  else
-    out << count / 1000 << "s";
-  return out;
-}
 
 /**
  * @brief 标准输出流打印函数，以缩进文本的方式打印输出。
@@ -247,7 +225,7 @@ public:
   {
     assert(info || !owned); // info为空时，owned必须为false
     mInfo = info;
-    reinterpret_cast<std::size_t&>(mInfo) |= owned;
+    reinterpret_cast<std::size_t&>(mInfo) |= int(owned);
   }
 
   /**

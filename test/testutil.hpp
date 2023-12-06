@@ -14,8 +14,8 @@
 using namespace std::chrono_literals;
 using namespace std::string_literals;
 
-#define timing(code) COMMON_TIMING(code)
-#define niming(n, code) COMMON_NIMING(n, code)
+#define timing(code) MY_TIMING(code)
+#define niming(n, code) MY_NIMING(n, code)
 
 /**
  * @brief 用于阻止一个求值被编译器优化掉。
@@ -24,7 +24,8 @@ template<typename T>
 inline T&&
 noopt(T&& a)
 {
-  asm volatile("" : "+r"(a));
+  extern void noopt_impl(void*);
+  noopt_impl(&a);
   return a;
 }
 

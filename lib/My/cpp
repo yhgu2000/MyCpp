@@ -23,4 +23,7 @@ operator delete(void* ptr, std::size_t, std::align_val_t al)
   return ::operator delete(ptr, al);
 }
 
+int
+getenv_s(std::size_t* len, char* value, std::size_t valuesz, const char* name);
+
 #endif

@@ -11,17 +11,20 @@ if(NOT Boost_UNIT_TEST_FRAMEWORK_FOUND)
   message(WARNING "Boost.Test 未找到，单元测试已禁用。")
   return()
 endif()
+if (MSVC AND NOT Boost_USE_STATIC_LIBS)
+  target_link_libraries(Boost::unit_test_framework
+    INTERFACE Boost::dynamic_linking)
+endif()
 
 
 
 #
 # 测试实用工具
 #
-add_library(testutil OBJECT util.hpp util.cpp)
+add_library(testutil OBJECT testutil.hpp testutil.cpp)
 
-target_link_libraries(testutil
-  PUBLIC My Boost::boost Boost::unit_test_framework
-)
+target_link_libraries(testutil PUBLIC My Boost::boost
+  Boost::unit_test_framework)
 
 target_include_directories(testutil PUBLIC .)
 

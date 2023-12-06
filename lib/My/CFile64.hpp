@@ -1,26 +1,29 @@
 #pragma once
 
 #include "err.hpp"
-#include <cstdio>
-#include <vector>
+#include "util.hpp"
 
 #ifdef _WIN32
 
-extern int
-_chsize_s(int, std::int64_t);
-
+#include <io.h>
 #else
 
-extern "C" int
-ftruncate(int, std::int64_t) noexcept;
+#include <sys/io.h>
+
+int
+ftruncate(int fildes, off_t length);
 
 #endif
 
+#include <sys/stat.h>
+
 namespace My {
+
+using util::Bytes;
 
 /**
  * @brief 包装自 std::FILE*、跨平台的 64 位二进制文件读写类。
- * 
+ *
  * 其表现为平凡的指针，不保有文件资源的所有权，也不会在析构时关闭文件。
  */
 class CFile64
@@ -29,6 +32,27 @@ public:
   class Seeker;
   class Closer;
   class Closers;
+
+public:
+  /**
+   * @brief 加载文件内容到 std::string。
+   */
+  static std::string load_s(const char* path) noexcept(false);
+
+  /**
+   * @brief 保存 std::string。
+   */
+  static void save_s(const char* path, const std::string& data) noexcept(false);
+
+  /**
+   * @brief 加载文件内容到 Bytes (std::vector<std::uint8_t>)。
+   */
+  static Bytes load_b(const char* path) noexcept(false);
+
+  /**
+   * @brief 保存 Bytes (std::vector<std::uint8_t>)。
+   */
+  static void save_b(const char* path, const Bytes& data) noexcept(false);
 
 public:
   std::FILE* mPtr;
@@ -121,7 +145,7 @@ public:
     noexcept(false)
   {
     auto n = std::fread(buffer, size, count, mPtr);
-    if (n != count)
+    if (n != count && size != 0)
       throw err::Errno(std::ferror(mPtr));
   }
 
@@ -136,7 +160,7 @@ public:
   void write(const void* buffer, std::int64_t size, std::int64_t count) const
     noexcept(false)
   {
-    if (std::fwrite(buffer, size, count, mPtr) != count)
+    if (std::fwrite(buffer, size, count, mPtr) != count && size != 0)
       throw err::Errno(std::ferror(mPtr));
   }
 
@@ -188,13 +212,39 @@ public:
   {
 #ifdef _WIN32
     if (auto err = _chsize_s(fileno(mPtr), size))
-      throw err::Errno(err);
 #else
     assert(sizeof(long) == 8);
     if (auto err = ftruncate(fileno(mPtr), size))
-      throw err::Errno(err);
 #endif
+      throw err::Errno(err);
   }
+
+  /**
+   * @brief 获取文件大小。
+   */
+  std::int64_t size() const noexcept(false)
+  {
+#ifdef _WIN32
+    struct _stat64 st;
+    if (_fstat64(fileno(mPtr), &st))
+#else
+    assert(sizeof(long) == 8);
+    struct stat st;
+    if (fstat(fileno(mPtr), &st))
+#endif
+      throw err::Errno(errno);
+    return st.st_size;
+  }
+
+  /**
+   * @brief 读取所有剩下的数据到 std::string。
+   */
+  std::string rest_s() const noexcept(false);
+
+  /**
+   * @brief 读取所有剩下的数据到  Bytes (std::vector<std::uint8_t>)。
+   */
+  Bytes rest_b() const noexcept(false);
 };
 
 class CFile64::Seeker
@@ -207,12 +257,12 @@ public:
 
 public:
   const CFile64& _;
-  std::size_t _pos;
+  std::size_t mPos;
 
 public:
   Seeker(const CFile64& _)
     : _(_)
-    , _pos(_.tell())
+    , mPos(_.tell())
   {
   }
 
@@ -222,7 +272,7 @@ public:
     _.seek(offset, origin);
   }
 
-  ~Seeker() noexcept { std::fseek(_, _pos, SEEK_SET); }
+  ~Seeker() noexcept { std::fseek(_, mPos, SEEK_SET); }
 };
 
 class CFile64::Closer
@@ -285,9 +335,9 @@ operator>>(const CFile64& f, std::vector<T>& vec) noexcept(false)
 
 inline void
 My::CFile64::read(void* buffer,
-                   std::int64_t size,
-                   std::int64_t count,
-                   std::int64_t addr) const noexcept(false)
+                  std::int64_t size,
+                  std::int64_t count,
+                  std::int64_t addr) const noexcept(false)
 {
   Seeker seeker(*this, addr, SEEK_SET);
   read(buffer, size, count);
@@ -295,10 +345,24 @@ My::CFile64::read(void* buffer,
 
 inline void
 My::CFile64::write(const void* buffer,
-                    std::int64_t size,
-                    std::int64_t count,
-                    std::int64_t addr) const noexcept(false)
+                   std::int64_t size,
+                   std::int64_t count,
+                   std::int64_t addr) const noexcept(false)
 {
   Seeker seeker(*this, addr, SEEK_SET);
   write(buffer, size, count);
+}
+
+inline void
+My::CFile64::save_s(const char* path, const std::string& data) noexcept(false)
+{
+  CFile64 file(path, "wb");
+  file.write(data.data(), data.size(), 1);
+}
+
+inline void
+My::CFile64::save_b(const char* path, const Bytes& data) noexcept(false)
+{
+  CFile64 file(path, "wb");
+  file.write(data.data(), data.size(), 1);
 }

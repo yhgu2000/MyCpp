@@ -1,9 +1,17 @@
-# 文件系统解耦
+# 与环境解耦
 env.cmake
+env.sh
+env.bat
+env.ps1
 
 # VS Code
-build
-.vscode
+.vscode/
+build/
+
+# Visual Studio
+.vs/
+out/
+CMakeSettings.json
 
 # Qt Creator
 **/*.user
@@ -11,8 +19,3 @@ build
 **/*.autosave
 **/.qt_for_python/
 **/build-**/
-
-# Visual Studio
-.vs
-out
-CMakeSettings.json
