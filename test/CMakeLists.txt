@@ -43,4 +43,12 @@ add_test(NAME test+ COMMAND test+)
 
 
 
+# My 库测试
 add_subdirectory(My)
+
+
+
+#
+# 覆盖率测试报告
+#
+add_code_coverage_all_targets(EXCLUDE ./*)

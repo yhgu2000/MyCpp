@@ -15,7 +15,9 @@ target_include_directories(My
     $<INSTALL_INTERFACE:include>
 )
 
-target_link_libraries(My PUBLIC Boost::json)
+target_link_libraries(My PUBLIC Boost::json Boost::log)
 
 install(TARGETS My EXPORT ${EXPORT_TARGETS})
 install(DIRECTORY My TYPE INCLUDE PATTERN "*.cpp" EXCLUDE)
+
+target_code_coverage(My)

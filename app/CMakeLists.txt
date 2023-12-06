@@ -8,7 +8,7 @@
 #
 add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/timestamp.h
   ${CMAKE_CURRENT_BINARY_DIR}/timestamp.notexist # 使在每次构建时都执行
-  COMMAND ${CMAKE_COMMAND} -P ${CMAKE_BINARY_DIR}/cmake/timestamp.cmake
+  COMMAND ${CMAKE_COMMAND} -P ${PROJECT_BINARY_DIR}/cmake/timestamp.cmake
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 )
 

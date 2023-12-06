@@ -8,10 +8,11 @@ endif()
 
 # CMake 依赖图
 add_custom_command(OUTPUT targets.dot targets.png
-  COMMAND ${CMAKE_COMMAND} --graphviz=targets.dot ..
+  COMMAND ${CMAKE_COMMAND} -G ${CMAKE_GENERATOR}
+    --graphviz=targets.dot ${PROJECT_SOURCE_DIR}
   COMMAND Doxygen::dot -Tpng targets.dot -o targets.png
-  DEPENDS ${CMAKE_BINARY_DIR}/CMakeFiles/TargetDirectories.txt
-  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  DEPENDS ${PROJECT_BINARY_DIR}/CMakeFiles/TargetDirectories.txt
+  WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
 )
 
 
@@ -31,5 +32,4 @@ doxygen_add_docs(doxygen
   ../lib
 )
 
-set_target_properties(doxygen PROPERTIES EXCLUDE_FROM_ALL FALSE)
 install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html DESTINATION doc)
