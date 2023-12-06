@@ -83,3 +83,9 @@
   - 重构项目的命名空间；
   - 重新编写 CMake 安装规则（`install`命令）；
   - ...
+
+# 第三方许可
+
+- [cmake-scripts](https://github.com/StableCoder/cmake-scripts/blob/main/LICENSE)
+
+  使用了其中的覆盖率测试 CMake 脚本。

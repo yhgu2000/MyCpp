@@ -19,6 +19,13 @@ endif()
 
 
 #
+# 覆盖率测试报告
+#
+add_code_coverage_all_targets(EXCLUDE ./*)
+
+
+
+#
 # 测试实用工具
 #
 add_library(testutil OBJECT testutil.hpp testutil.cpp)
@@ -41,14 +48,9 @@ target_compile_definitions(test+ PRIVATE BOOST_TEST_MODULE=test)
 
 add_test(NAME test+ COMMAND test+)
 
+target_code_coverage(test+)
+
 
 
 # My 库测试
 add_subdirectory(My)
-
-
-
-#
-# 覆盖率测试报告
-#
-add_code_coverage_all_targets(EXCLUDE ./*)
