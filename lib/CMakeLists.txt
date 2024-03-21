@@ -19,4 +19,4 @@ install(
   TYPE INCLUDE
   PATTERN "*.cpp" EXCLUDE)
 
-target_code_coverage(My)
+target_code_coverage(My AUTO ALL)

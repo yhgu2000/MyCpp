@@ -18,7 +18,7 @@ endif()
 #
 # 覆盖率测试报告
 #
-add_code_coverage_all_targets(EXCLUDE ./*)
+add_code_coverage_all_targets(EXCLUDE test/*)
 
 #
 # 测试实用工具
