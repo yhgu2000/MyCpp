@@ -1,7 +1,5 @@
 link_libraries(testutil)
 
-
-
 #
 # 计时器相关测试
 #

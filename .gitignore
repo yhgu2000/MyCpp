@@ -19,3 +19,6 @@ CMakeSettings.json
 **/*.autosave
 **/.qt_for_python/
 **/build-**/
+
+# Python
+**/__pycache__

@@ -30,7 +30,7 @@
 
 ## 构建与使用
 
-1. 复制 `env.cmake.example` 为 `env.cmake` ，然后按照你的本地环境修改其中的路径。
+1. 复制 `default.env.cmake` 为 `env.cmake` ，然后按照你的本地环境修改其中的路径。
 
 2. 运行 CMake 配置过程：
 

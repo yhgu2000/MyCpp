@@ -1,10 +1,10 @@
-##============================================================================##
+# ============================================================================ #
 # 包含一个 test_setup_env 函数，用法：
 #
 # test_setup_env(<test>)
 #
 # 给 <test> 添加必要的环境变量。
-##============================================================================##
+# ============================================================================ #
 
 set(_dylib_dirs ${Boost_LIBRARY_DIRS})
 
@@ -17,6 +17,6 @@ else()
 endif()
 
 function(test_setup_env test)
-  set_tests_properties(${test} PROPERTIES
-    ENVIRONMENT_MODIFICATION "${_env_mod}")
+  set_tests_properties(${test} PROPERTIES ENVIRONMENT_MODIFICATION
+                                          "${_env_mod}")
 endfunction()
