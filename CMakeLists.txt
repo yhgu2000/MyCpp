@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.20)
 
 include(env.cmake OPTIONAL RESULT_VARIABLE _env_cmake_found)
 if(NOT _env_cmake_found)
-  include(default.env.cmake)
+  include(environ.cmake)
 endif()
 
 # 这里应使用 CamelCase 以贴合 cmake 导出文件的命名风格
