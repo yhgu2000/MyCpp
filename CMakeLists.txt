@@ -9,7 +9,7 @@ if(NOT _env_cmake_found)
 endif()
 
 # 这里应使用 CamelCase 以贴合 cmake 导出文件的命名风格
-project(UnnamedProject VERSION 0.0.0.0)
+project(MyCpp VERSION 0.0.0.0)
 include(CTest) # CTest 需要在顶层包含
 
 # 安装导出目标名

@@ -4,8 +4,8 @@
 static const char kVersionInfo[] =
   "CLI Example\n"
   "\n"
-  "Built: " UnnamedProject_TIMESTAMP "\n"
-  "Project: " UnnamedProject_VERSION "\n"
+  "Built: " MyCpp_TIMESTAMP "\n"
+  "Project: " MyCpp_VERSION "\n"
   "Copyright (C) 2023 Yuhao Gu. All Rights Reserved.";
 
 #include "po.hpp"
