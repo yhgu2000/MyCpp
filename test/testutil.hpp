@@ -54,6 +54,12 @@ norm()
   return std::uniform_real_distribution<>(0, 1)(gRand);
 }
 
+inline std::size_t
+range(std::size_t begin, std::size_t end)
+{
+  return std::uniform_int_distribution<std::size_t>(begin, end)(gRand);
+}
+
 /**
  * @brief 生成[0,end)间的随机整数。
  */

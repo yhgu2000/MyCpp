@@ -99,9 +99,18 @@ enum class LockType
   kMutex,
   kRecursive,
   kShared,
+  // spin
   kSpin,
   kSpinRecursive,
   kSpinShared,
+  // timed (TODO)
+  kMutexTimed,
+  kRecursiveTimed,
+  kSharedTimed,
+  // spin timed (TODO)
+  kSpinTimed,
+  kSpinRecursiveTimed,
+  kSpinSharedTimed,
 };
 
 std::istream&
@@ -258,7 +267,7 @@ lock_mutex(int argc, char* argv[])
 } // namespace
 
 // ========================================================================== //
-// 文件打开速度
+// 文件打开速度 (TODO)
 // ========================================================================== //
 
 namespace {
