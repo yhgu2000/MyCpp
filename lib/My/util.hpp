@@ -8,6 +8,12 @@
 
 namespace My::util {
 
+/**
+ * @brief 空操作，用于占位和阻止编译器优化。
+ */
+void
+noop();
+
 using namespace std::string_literals;
 using namespace std::chrono_literals;
 

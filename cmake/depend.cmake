@@ -8,7 +8,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
 # 设置调试配置后缀
 set(CMAKE_DEBUG_POSTFIX ".d")
-# 设置可执行和动态库的输出目录
+# 设置可执行和动态库的输出目录，以免找不到项目自身的动态库
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin/$<CONFIG>")
 
 # MSVC 配置

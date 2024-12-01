@@ -21,3 +21,10 @@ target_include_directories(timestamp INTERFACE ${CMAKE_CURRENT_BINARY_DIR})
 add_executable(app app.cpp)
 
 target_link_libraries(app PUBLIC timestamp My Boost::program_options)
+
+#
+# C/C++ 统计工具
+#
+add_executable(my-statistics my-statistics.cpp)
+
+target_link_libraries(my-statistics PUBLIC timestamp My Boost::program_options)
