@@ -3,6 +3,8 @@ env.cmake
 env.sh
 env.bat
 env.ps1
+tmp/
+dat/
 
 # VS Code
 .vscode/

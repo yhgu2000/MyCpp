@@ -20,3 +20,20 @@ install(
   PATTERN "*.cpp" EXCLUDE)
 
 target_code_coverage(My AUTO ALL)
+
+#
+# “我的 HTTP”客户端/服务器框架。
+#
+file(GLOB _src MyHttp/*)
+
+add_library(MyHttp ${_src})
+
+target_link_libraries(MyHttp PUBLIC My)
+
+install(TARGETS MyHttp EXPORT ${EXPORT_TARGETS})
+install(
+  DIRECTORY MyHttp
+  TYPE INCLUDE
+  PATTERN "*.cpp" EXCLUDE)
+
+target_code_coverage(MyHttp AUTO ALL)
