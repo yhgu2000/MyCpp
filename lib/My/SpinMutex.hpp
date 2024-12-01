@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <cassert>
+#include <climits>
 #include <thread>
 
 namespace My {
@@ -19,25 +20,22 @@ public:
 
   // TODO 以下三个类的实现
   class Timed;
-  class TimedRecursive;
-  class TimedShared;
+  class RecursiveTimed;
+  class SharedTimed;
 
 public:
-  void lock(std::memory_order order = std::memory_order_seq_cst) noexcept
+  void lock() noexcept
   {
-    while (mLocked.test_and_set(order))
+    while (mLocked.test_and_set(std::memory_order_acquire))
       ;
   }
 
-  bool try_lock(std::memory_order order = std::memory_order_seq_cst) noexcept
+  bool try_lock() noexcept
   {
-    return !mLocked.test_and_set(order);
+    return !mLocked.test_and_set(std::memory_order_acquire);
   }
 
-  void unlock(std::memory_order order = std::memory_order_seq_cst) noexcept
-  {
-    mLocked.clear(order);
-  }
+  void unlock() noexcept { mLocked.clear(std::memory_order_release); }
 
 private:
   std::atomic_flag mLocked{ ATOMIC_FLAG_INIT };
@@ -49,41 +47,45 @@ private:
 class SpinMutex::Recursive
 {
 public:
-  void lock(std::memory_order order = std::memory_order_seq_cst) noexcept
+  void lock() noexcept
   {
     std::thread::id desired = std::this_thread::get_id();
-    if (mOwner.load(order) == desired) {
+    if (mOwner.load(std::memory_order_relaxed) == desired) {
       ++mCount;
       return;
     }
     std::thread::id expected;
     do
       expected = {};
-    while (!mOwner.compare_exchange_weak(expected, desired, order));
+    while (!mOwner.compare_exchange_weak(
+      expected, desired, std::memory_order_acquire, std::memory_order_relaxed));
     mCount = 1;
   }
 
-  bool try_lock(std::memory_order order = std::memory_order_seq_cst) noexcept
+  bool try_lock() noexcept
   {
     std::thread::id desired = std::this_thread::get_id();
-    if (mOwner.load(order) == desired) {
+    if (mOwner.load(std::memory_order_relaxed) == desired) {
       ++mCount;
       return true;
     }
     std::thread::id expected;
-    if (!mOwner.compare_exchange_weak(expected, desired, order))
+    if (!mOwner.compare_exchange_strong(expected,
+                                        desired,
+                                        std::memory_order_acquire,
+                                        std::memory_order_relaxed))
       return false;
     mCount = 1;
     return true;
   }
 
-  void unlock(std::memory_order order = std::memory_order_seq_cst) noexcept
+  void unlock() noexcept
   {
     assert(mOwner.load(std::memory_order_relaxed) ==
              std::this_thread::get_id() &&
            mCount > 0);
     if (--mCount == 0)
-      mOwner.store({}, order);
+      mOwner.store({}, std::memory_order_release);
   }
 
 private:
@@ -97,50 +99,56 @@ private:
 class SpinMutex::Shared
 {
 public:
-  void lock(std::memory_order order = std::memory_order_seq_cst) noexcept
+  void lock() noexcept
   {
     unsigned expected, desired = UINT_MAX;
     do
       expected = 0;
-    while (!mCount.compare_exchange_weak(expected, desired, order));
+    while (!mCount.compare_exchange_weak(
+      expected, desired, std::memory_order_acquire, std::memory_order_relaxed));
   }
 
-  bool try_lock(std::memory_order order = std::memory_order_seq_cst) noexcept
+  bool try_lock() noexcept
   {
     unsigned expected = 0, desired = UINT_MAX;
-    return mCount.compare_exchange_weak(expected, desired, order);
+    return mCount.compare_exchange_strong(
+      expected, desired, std::memory_order_acquire, std::memory_order_relaxed);
   }
 
-  void unlock(std::memory_order order = std::memory_order_seq_cst) noexcept
+  void unlock() noexcept
   {
     assert(mCount.load(std::memory_order_relaxed) == UINT_MAX);
-    mCount.store(0, order);
+    mCount.store(0, std::memory_order_release);
   }
 
-  void lock_shared(std::memory_order order = std::memory_order_seq_cst) noexcept
+  void lock_shared() noexcept
   {
-    unsigned expected = mCount.load(order);
-    do {
+    unsigned expected = 0;
+    do
       if (expected == UINT_MAX)
         expected = 0;
-    } while (!mCount.compare_exchange_weak(expected, expected + 1, order));
+    while (!mCount.compare_exchange_weak(expected,
+                                         expected + 1,
+                                         std::memory_order_acquire,
+                                         std::memory_order_relaxed));
   }
 
-  bool try_lock_shared(
-    std::memory_order order = std::memory_order_seq_cst) noexcept
+  bool try_lock_shared() noexcept
   {
-    unsigned expected = mCount.load(order);
+    unsigned expected = 0;
     if (expected == UINT_MAX)
       return false;
-    return mCount.compare_exchange_weak(expected, expected + 1, order);
+    return mCount.compare_exchange_strong(expected,
+                                          expected + 1,
+                                          std::memory_order_acquire,
+                                          std::memory_order_relaxed);
   }
 
-  void unlock_shared(
-    std::memory_order order = std::memory_order_seq_cst) noexcept
+  void unlock_shared() noexcept
   {
     assert(mCount.load(std::memory_order_relaxed) != UINT_MAX &&
            mCount.load(std::memory_order_relaxed) != 0);
-    mCount.fetch_sub(1, order);
+    mCount.fetch_sub(1, std::memory_order_release);
   }
 
 private:
