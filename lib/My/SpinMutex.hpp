@@ -19,6 +19,11 @@ public:
   class Recursive;
   class Shared;
 
+  template<typename T,
+           unsigned B = 1,
+           typename = std::enable_if_t<std::is_scalar_v<T>>>
+  class Bit;
+
 public:
   void lock() noexcept
   {
@@ -34,7 +39,10 @@ public:
   }
 
   template<class Rep, class Period>
-  bool try_lock_for(const std::chrono::duration<Rep, Period>& timeout) noexcept;
+  bool try_lock_for(const std::chrono::duration<Rep, Period>& timeout) noexcept
+  {
+    return try_lock_until(std::chrono::high_resolution_clock::now() + timeout);
+  }
 
   template<class Clock, class Duration>
   bool try_lock_until(
@@ -43,14 +51,6 @@ public:
 protected:
   std::atomic_flag mLocked{ ATOMIC_FLAG_INIT };
 };
-
-template<class Rep, class Period>
-bool
-SpinMutex::try_lock_for(
-  const std::chrono::duration<Rep, Period>& timeout) noexcept
-{
-  return try_lock_until(std::chrono::high_resolution_clock::now() + timeout);
-}
 
 template<class Clock, class Duration>
 bool
@@ -83,7 +83,10 @@ public:
   bool try_lock() noexcept;
 
   template<class Rep, class Period>
-  bool try_lock_for(const std::chrono::duration<Rep, Period>& timeout) noexcept;
+  bool try_lock_for(const std::chrono::duration<Rep, Period>& timeout) noexcept
+  {
+    return try_lock_until(std::chrono::high_resolution_clock::now() + timeout);
+  }
 
   template<class Clock, class Duration>
   bool try_lock_until(
@@ -93,14 +96,6 @@ protected:
   std::atomic<std::thread::id> mOwner;
   unsigned mCount{ 0 };
 };
-
-template<class Rep, class Period>
-bool
-SpinMutex::Recursive::try_lock_for(
-  const std::chrono::duration<Rep, Period>& timeout) noexcept
-{
-  return try_lock_until(std::chrono::high_resolution_clock::now() + timeout);
-}
 
 template<class Clock, class Duration>
 bool
@@ -152,7 +147,10 @@ public:
   }
 
   template<class Rep, class Period>
-  bool try_lock_for(const std::chrono::duration<Rep, Period>& timeout) noexcept;
+  bool try_lock_for(const std::chrono::duration<Rep, Period>& timeout) noexcept
+  {
+    return try_lock_until(std::chrono::high_resolution_clock::now() + timeout);
+  }
 
   template<class Clock, class Duration>
   bool try_lock_until(
@@ -171,7 +169,11 @@ public:
 
   template<class Rep, class Period>
   bool try_lock_shared_for(
-    const std::chrono::duration<Rep, Period>& timeout) noexcept;
+    const std::chrono::duration<Rep, Period>& timeout) noexcept
+  {
+    return try_lock_shared_until(std::chrono::high_resolution_clock::now() +
+                                 timeout);
+  }
 
   template<class Clock, class Duration>
   bool try_lock_shared_until(
@@ -180,14 +182,6 @@ public:
 protected:
   std::atomic<unsigned> mCount{ 0 };
 };
-
-template<class Rep, class Period>
-bool
-SpinMutex::Shared::try_lock_for(
-  const std::chrono::duration<Rep, Period>& timeout) noexcept
-{
-  return try_lock_until(std::chrono::high_resolution_clock::now() + timeout);
-}
 
 template<class Clock, class Duration>
 bool
@@ -202,15 +196,6 @@ SpinMutex::Shared::try_lock_until(
   } while (!mCount.compare_exchange_weak(
     expected, desired, std::memory_order_acquire, std::memory_order_relaxed));
   return true;
-}
-
-template<class Rep, class Period>
-bool
-SpinMutex::Shared::try_lock_shared_for(
-  const std::chrono::duration<Rep, Period>& timeout) noexcept
-{
-  return try_lock_shared_until(std::chrono::high_resolution_clock::now() +
-                               timeout);
 }
 
 template<class Clock, class Duration>
@@ -228,6 +213,127 @@ SpinMutex::Shared::try_lock_shared_until(
                                          expected + 1,
                                          std::memory_order_acquire,
                                          std::memory_order_relaxed));
+  return true;
+}
+
+/**
+ * @brief 使用标量类型的一个位作为自旋锁。
+ *
+ * @tparam T 标量类型，可以是整数或指针。
+ * @tparam B 位号，0 为最低位。
+ */
+template<typename T, unsigned B, typename>
+class SpinMutex::Bit
+{
+  static bool __bit_test(T t)
+  {
+    if constexpr (std::is_pointer_v<T>)
+      return reinterpret_cast<std::uintptr_t>(t) & (1 << B);
+    else
+      return t & (T(1) << B);
+  }
+
+  static T __bit_set(T t)
+  {
+    if constexpr (std::is_pointer_v<T>)
+      return reinterpret_cast<T>(reinterpret_cast<std::uintptr_t>(t) |
+                                 (std::uintptr_t(1) << B));
+    else
+      return t | (T(1) << B);
+  }
+
+  static T __bit_unset(T t)
+  {
+    if constexpr (std::is_pointer_v<T>)
+      return reinterpret_cast<T>(reinterpret_cast<std::uintptr_t>(t) &
+                                 ~(std::uintptr_t(1) << B));
+    else
+      return t & ~(T(1) << B);
+  }
+
+public:
+  Bit(T t = T()) noexcept
+    : mT(__bit_unset(t))
+  {
+  }
+
+  /**
+   * @brief 如果已被锁定，则返回 true；否则返回 false。
+   */
+  operator bool() const noexcept
+  {
+    return __bit_test(mT.load(std::memory_order_relaxed));
+  }
+
+  /**
+   * @brief 返回原始值。
+   */
+  T operator*() const noexcept
+  {
+    return __bit_unset(mT.load(std::memory_order_relaxed));
+  }
+
+  /**
+   * @brief 返回原始值。
+   */
+  T operator->() const noexcept { return operator*(); }
+
+  void lock() noexcept
+  {
+    T expected{};
+    do
+      expected = __bit_unset(expected);
+    while (!mT.compare_exchange_weak(expected,
+                                     __bit_set(expected),
+                                     std::memory_order_acquire,
+                                     std::memory_order_relaxed));
+  }
+
+  void unlock() noexcept
+  {
+    auto t = mT.load(std::memory_order_relaxed);
+    assert(__bit_test(t));
+    mT.store(__bit_unset(t), std::memory_order_release);
+  }
+
+  bool try_lock() noexcept
+  {
+    T expected = __bit_unset(mT.load(std::memory_order_relaxed));
+    return mT.compare_exchange_strong(expected,
+                                      __bit_set(expected),
+                                      std::memory_order_acquire,
+                                      std::memory_order_relaxed);
+  }
+
+  template<class Rep, class Period>
+  bool try_lock_for(const std::chrono::duration<Rep, Period>& timeout) noexcept
+  {
+    return try_lock_until(std::chrono::high_resolution_clock::now() + timeout);
+  }
+
+  template<class Clock, class Duration>
+  bool try_lock_until(
+    const std::chrono::time_point<Clock, Duration>& timeout) noexcept;
+
+protected:
+  std::atomic<T> mT;
+};
+
+template<typename T, unsigned B, typename U>
+template<class Clock, class Duration>
+bool
+SpinMutex::Bit<T, B, U>::try_lock_until(
+  const std::chrono::time_point<Clock, Duration>& timeout) noexcept
+{
+  T expected{};
+  do {
+    expected = __bit_unset(expected);
+    if (Clock::now() >= timeout)
+      return false;
+  } while (!mT.compare_exchange_weak(expected,
+                                     __bit_set(expected),
+                                     std::memory_order_acquire,
+                                     std::memory_order_relaxed));
   return true;
 }
 

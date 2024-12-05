@@ -178,3 +178,80 @@ BOOST_AUTO_TEST_CASE(shared)
   for (auto& thread : threads)
     thread.join();
 }
+
+BOOST_AUTO_TEST_CASE(spin_bit)
+{
+  {
+    std::vector<std::thread> threads(std::thread::hardware_concurrency());
+
+    SpinMutex::Bit<int, 10> mutex;
+    Progression series(randgen::range(0, 100), threads.size());
+    BOOST_ASSERT(series.check());
+
+    for (auto& thread : threads)
+      thread = std::thread([&] {
+        for (std::size_t i = 0; i < 1000; ++i) {
+          switch (i % 4) {
+            case 0:
+              mutex.lock();
+              break;
+            case 1:
+              if (!mutex.try_lock())
+                continue;
+              break;
+            case 2:
+              if (!mutex.try_lock_for(1ms))
+                continue;
+              break;
+            case 3:
+              if (!mutex.try_lock_until(std::chrono::steady_clock::now() + 1ms))
+                continue;
+              break;
+          }
+
+          BOOST_TEST(series.check());
+          series.assign(randgen::range(0, 100));
+          mutex.unlock();
+        }
+      });
+    for (auto& thread : threads)
+      thread.join();
+  }
+
+  {
+    std::vector<std::thread> threads(std::thread::hardware_concurrency());
+
+    SpinMutex::Bit<Progression*, 2> mutex;
+    Progression series(randgen::range(0, 100), threads.size());
+    BOOST_ASSERT(series.check());
+
+    for (auto& thread : threads)
+      thread = std::thread([&] {
+        for (std::size_t i = 0; i < 1000; ++i) {
+          switch (i % 4) {
+            case 0:
+              mutex.lock();
+              break;
+            case 1:
+              if (!mutex.try_lock())
+                continue;
+              break;
+            case 2:
+              if (!mutex.try_lock_for(1ms))
+                continue;
+              break;
+            case 3:
+              if (!mutex.try_lock_until(std::chrono::steady_clock::now() + 1ms))
+                continue;
+              break;
+          }
+
+          BOOST_TEST(series.check());
+          series.assign(randgen::range(0, 100));
+          mutex.unlock();
+        }
+      });
+    for (auto& thread : threads)
+      thread.join();
+  }
+}
