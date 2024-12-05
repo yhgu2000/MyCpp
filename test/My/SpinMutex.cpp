@@ -182,47 +182,61 @@ BOOST_AUTO_TEST_CASE(shared)
 BOOST_AUTO_TEST_CASE(spin_bit)
 {
   {
-    std::vector<std::thread> threads(std::thread::hardware_concurrency());
+    std::vector<std::thread> threadsA(std::thread::hardware_concurrency());
+    std::vector<std::thread> threadsB(std::thread::hardware_concurrency());
 
-    SpinMutex::Bit<int, 10> mutex;
-    Progression series(randgen::range(0, 100), threads.size());
-    BOOST_ASSERT(series.check());
+    std::atomic<int> value{ 0 };
+    SpinMutex::Bit<int, 10> mutexA(value);
+    SpinMutex::Bit<int, 11> mutexB(value);
 
-    for (auto& thread : threads)
-      thread = std::thread([&] {
-        for (std::size_t i = 0; i < 1000; ++i) {
-          switch (i % 4) {
-            case 0:
-              mutex.lock();
-              break;
-            case 1:
-              if (!mutex.try_lock())
-                continue;
-              break;
-            case 2:
-              if (!mutex.try_lock_for(1ms))
-                continue;
-              break;
-            case 3:
-              if (!mutex.try_lock_until(std::chrono::steady_clock::now() + 1ms))
-                continue;
-              break;
-          }
+    Progression seriesA(randgen::range(0, 100), threadsA.size());
+    BOOST_ASSERT(seriesA.check());
+    Progression seriesB(randgen::range(0, 100), threadsB.size());
+    BOOST_ASSERT(seriesB.check());
 
-          BOOST_TEST(series.check());
-          series.assign(randgen::range(0, 100));
-          mutex.unlock();
+    auto f = [](auto& mutex, auto& series) {
+      for (std::size_t i = 0; i < 1000; ++i) {
+        switch (i % 4) {
+          case 0:
+            mutex.lock();
+            break;
+          case 1:
+            if (!mutex.try_lock())
+              continue;
+            break;
+          case 2:
+            if (!mutex.try_lock_for(1ms))
+              continue;
+            break;
+          case 3:
+            if (!mutex.try_lock_until(std::chrono::steady_clock::now() + 1ms))
+              continue;
+            break;
         }
-      });
-    for (auto& thread : threads)
+
+        BOOST_TEST(series.check());
+        series.assign(randgen::range(0, 100));
+        mutex.unlock();
+      }
+    };
+
+    for (auto& thread : threadsA)
+      thread = std::thread([&]() { f(mutexA, seriesA); });
+    for (auto& thread : threadsB)
+      thread = std::thread([&]() { f(mutexB, seriesB); });
+
+    for (auto& thread : threadsA)
+      thread.join();
+    for (auto& thread : threadsB)
       thread.join();
   }
 
   {
     std::vector<std::thread> threads(std::thread::hardware_concurrency());
 
-    SpinMutex::Bit<Progression*, 2> mutex;
     Progression series(randgen::range(0, 100), threads.size());
+    std::atomic<Progression*> value(&series);
+    SpinMutex::Bit<Progression*, 2> mutex(value);
     BOOST_ASSERT(series.check());
 
     for (auto& thread : threads)
@@ -246,8 +260,9 @@ BOOST_AUTO_TEST_CASE(spin_bit)
               break;
           }
 
-          BOOST_TEST(series.check());
-          series.assign(randgen::range(0, 100));
+          auto series = mutex.value();
+          BOOST_TEST(series->check());
+          series->assign(randgen::range(0, 100));
           mutex.unlock();
         }
       });

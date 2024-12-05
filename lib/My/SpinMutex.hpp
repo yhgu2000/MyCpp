@@ -280,9 +280,9 @@ struct SpinMutex::Bit
 
   static void unlock(std::atomic<T>& t) noexcept
   {
-    auto t = t.load(std::memory_order_relaxed);
-    assert(test(t));
-    t.store(unset(t), std::memory_order_release);
+    auto v = t.load(std::memory_order_relaxed);
+    assert(test(v));
+    t.store(unset(v), std::memory_order_release);
   }
 
   static bool try_lock(std::atomic<T>& t) noexcept
@@ -307,6 +307,36 @@ struct SpinMutex::Bit
   static bool try_lock_until(
     std::atomic<T>& t,
     const std::chrono::time_point<Clock, Duration>& timeout) noexcept;
+
+  std::atomic<T>& mT;
+
+  Bit(std::atomic<T>& t) noexcept
+    : mT(t)
+  {
+  }
+
+  bool locked() const noexcept { return locked(mT); }
+
+  T value() const noexcept { return value(mT); }
+
+  void lock() noexcept { lock(mT); }
+
+  void unlock() noexcept { unlock(mT); }
+
+  bool try_lock() noexcept { return try_lock(mT); }
+
+  template<class Rep, class Period>
+  bool try_lock_for(const std::chrono::duration<Rep, Period>& timeout) noexcept
+  {
+    return try_lock_for(mT, timeout);
+  }
+
+  template<class Clock, class Duration>
+  bool try_lock_until(
+    const std::chrono::time_point<Clock, Duration>& timeout) noexcept
+  {
+    return try_lock_until(mT, timeout);
+  }
 };
 
 template<typename T, unsigned B, typename U>
