@@ -1,148 +1,280 @@
 #pragma once
 
+#include "SpinMutex.hpp"
 #include <atomic>
 #include <cassert>
+#include <memory>
 
 namespace My {
 
 /**
- * @brief 池化混入类，用在并发编程中实现无锁的资源池。
+ * @brief 多线程资源池混入类：
+ * 1. 允许多个线程并发地插入资源；
+ * 2. 允许多个线程并发地申请任一资源，无论资源是哪个线程创建的；
+ * 3. 允许遍历所有的资源对象，但不保证遍历时的一致性，例如可能
+ *    遍历到最后一个资源对象时，第一个资源对象已经被销毁了。
  *
  * 示例：
  *
  * ```cpp
  * struct Resource : public Pooled<Resource> {};
  * Resource::Pool pool;
- * auto r = new Resource();
- * pool.give(r1);
- * r = pool.take();
+ * pool.give(std::make_shared<Resource>(r));
+ * auto resource = pool.take();
+ * Resource::Pool::drop(*resource);
  * ```
  *
  * @tparam T 资源类型。
  */
-
-class Pooled;
-using T = Pooled;
-class Pooled
+template<typename T>
+class Pooled : public std::enable_shared_from_this<T>
 {
 public:
-  struct Pool;
+  class Iterator;
+  class Pool;
+  using SpinBit = SpinMutex::Bit<T*, 0>;
 
   Pooled()
-    : mNextPooled(nullptr)
-    , mPrevPooled(nullptr)
+    : mNext(nullptr)
+    , mPrev(nullptr)
   {
-  }
-
-  //* 在池中的对象通过 mPrevPooled 和 mNextPooled 两个指针形成一个双向链表。
-  //*
-  //* 定义一个对象 “在池中” 为：
-  //*  1. 链表头 “在池中” ；
-  //*  2. 如果一个对象被一个 “在池中” 的其它对象指向，则它也 “在池中” 。
-  //*
-  //* 要求每个方法在调用和返回时满足额外的不变量约束：
-  //*  1. 任何一个不 “在池中” 的对象最多只能有一个线程访问它的头部。
-  //*  2. 对于任何一个一直 “在池中” 的对象，如果它的 mNextPooled 在读取时不
-  //*     为空，则在有限的步骤内 mNextPooled->mPrevPooled 一定会指向它自己。
-
-  /**
-   * @brief 检查当前资源是否在池中。
-   *
-   * @return true - 在池中；false - 不在池中。
-   */
-  // bool is_pooled() const
-  // {
-  //   auto prev = mPrevPooled.load(std::memory_order_acquire);
-  //   return prev != nullptr;
-  // }
-
-  /**
-   * @brief 基于一个已在池中的对象取出下一个对象。该方法是线程安全的，
-   * 多个线程可以同时调用同一个对象上的该方法。
-   *
-   * @return T* 下一个资源，如果池空则返回 nullptr。
-   */
-  T* take_next()
-  {
-    while (true) {
-      auto next = mNextPooled.load(std::memory_order_acquire);
-      if (next == nullptr)
-        return nullptr;
-      // 因为当前对象是链表头或在池中，所以 next 也在池中，而首先要做的就是
-      // 从池中取出 next
-      auto next2 = next->mNextPooled.load(std::memory_order_acquire);
-      if (!mNextPooled.compare_exchange_weak(
-            next, next2, std::memory_order_release, std::memory_order_relaxed))
-        continue;
-      // 到这里，next 不在池中了，但因为 mNextPooled 仍然指向 next2，
-      // 所以 next2 仍然在池中，所以要让 next2 满足不变量
-      if (next2 != nullptr)
-        next2->mPrevPooled.store(this, std::memory_order_release);
-      // 由于 next 不在池中，所以怎么处理都随意了
-      next->mPrevPooled.store(nullptr, std::memory_order_release);
-      next->mNextPooled.store(nullptr, std::memory_order_release);
-      return next;
-    }
-  }
-
-  /**
-   * @brief 归还当前资源，当前资源必须不在池中。该方法对 this 线程不安全，
-   * 在同一时刻最多只能有一个线程调用该方法。
-   *
-   * @param t 任何一个在池内的资源，将当前资源插入到它的后面。
-   */
-  void give_next(Pooled& t)
-  {
-    assert(t.mPrevPooled.load(std::memory_order_relaxed) == nullptr &&
-           t.mNextPooled.load(std::memory_order_relaxed) == nullptr);
-
-    mPrevPooled.store(&t, std::memory_order_release);
-    auto next = t.mNextPooled.exchange(this, std::memory_order_release);
-    // 到这里 this 就已经可以被认为在池中了
-    mNextPooled.store(next, std::memory_order_release);
-    if (next != nullptr)
-      next->mPrevPooled.store(this, std::memory_order_release);
-  }
-
-  /**
-   * @brief 丢弃当前资源，重复取出时无操作，在同一时刻最多只能有一个线程调用
-   * 该方法。
-   */
-  void drop_this()
-  {
-    while (true) {
-      auto prev = mPrevPooled.load(std::memory_order_acquire);
-      auto next = mNextPooled.load(std::memory_order_acquire);
-      auto expected = this;
-      if (!prev->mNextPooled.compare_exchange_weak(expected,
-                                                   next,
-                                                   std::memory_order_release,
-                                                   std::memory_order_relaxed))
-        continue;
-      // assert(expected == this);
-      while (!next->mPrevPooled.compare_exchange_weak(
-        expected, prev, std::memory_order_relaxed, std::memory_order_relaxed))
-        ;
-    }
   }
 
 private:
-  std::atomic<T*> mPrevPooled;
-  std::atomic<T*> mNextPooled;
-
-  Pooled(Pooled* prev, Pooled* next)
-    : mPrevPooled(prev)
-    , mNextPooled(next)
-  {
-  }
+  std::shared_ptr<T> mNext;
+  std::atomic<T*> mPrev; // 最低位用作自旋锁
+  static_assert(alignof(std::atomic<T*>) >= 4);
 };
 
-struct Pooled::Pool : Pooled
+/**
+ * @brief 资源池遍历器，每个实例锁定一个资源并在析构时释放锁。
+ */
+template<typename T>
+class Pooled<T>::Iterator : public std::shared_ptr<T>
 {
-  Pool()
-    : Pooled(this, this)
+public:
+  Iterator() = default;
+
+  /**
+   * @param p 资源指针，必须未被锁定，遍历器构造完成后会被锁定。
+   */
+  Iterator(std::shared_ptr<T> p)
+    : std::shared_ptr<T>(std::move(p))
   {
+    SpinBit::lock(std::shared_ptr<T>::operator*().mPrev);
   }
+
+  Iterator(const Iterator&) = delete;
+  Iterator(Iterator&&) = default;
+  Iterator& operator=(const Iterator&) = delete;
+  Iterator& operator=(Iterator&&) = default;
+
+  ~Iterator()
+  {
+    if (*this)
+      SpinBit::unlock(std::shared_ptr<T>::operator*().mPrev);
+  }
+
+  Iterator& operator++() noexcept;
 };
+
+template<typename T>
+typename Pooled<T>::Iterator&
+Pooled<T>::Iterator::operator++() noexcept
+{
+  auto& t = std::shared_ptr<T>::operator*();
+  auto next = t.mNext;
+  if (!next) {
+    std::shared_ptr<T>::reset();
+    return *this;
+  }
+  SpinBit::lock(next->mPrev);
+  SpinBit::unlock(t.mPrev);
+  std::shared_ptr<T>::operator=(std::move(next));
+  return *this;
+}
+
+/**
+ * @brief 资源池，线程安全。
+ */
+template<typename T>
+class Pooled<T>::Pool
+{
+public:
+  /**
+   * @brief 检查资源是否在池中。
+   *
+   * @return true - 在池中；false - 不在池中。
+   */
+  static bool pooled(const Pooled& t) noexcept
+  {
+    return t.mPrev.load(std::memory_order_relaxed) != nullptr;
+  }
+
+  /**
+   * @brief 基于一个池中节点（桩或资源）取出下一个资源，取出的资源会被移除出池。
+   * 该方法是线程安全的，多个线程可以同时调用同一个对象上的该方法。
+   *
+   * @return 下一个资源（未被锁定），如果池空则返回空指针。
+   */
+  static std::shared_ptr<T> take(Pooled& t) noexcept;
+
+  /**
+   * @brief 归还资源 r，将 r 插入到 t 之后，r 必须不在池中且未被锁定。
+   * 该方法对 r 线程不安全，在同一时刻最多只能有一个线程调用该方法。
+   *
+   * @param t 任何一个池中的节点。
+   */
+  static void give(Pooled& t, std::shared_ptr<T> r) noexcept;
+
+  /**
+   * @brief 从池中移除一个资源 t，t 必须在池中且未被锁定。
+   * 重复调用该方法时无操作。
+   */
+  static void drop(T& t) noexcept;
+
+  /**
+   * @brief 从节点 t 开始遍历池中的剩余资源。
+   */
+  static Iterator begin(Pooled& t) { return { t.shared_from_this() }; }
+
+  /**
+   * @brief 遍历池中的剩余资源结束。
+   */
+  static Iterator end() { return {}; }
+
+public:
+  /**
+   * @see take(Pooled&)
+   */
+  std::shared_ptr<T> take() { return take(mStub); }
+
+  /**
+   * @see give(Pooled&, std::shared_ptr<T>)
+   */
+  void give(std::shared_ptr<T> r) { give(mStub, std::move(r)); }
+
+  /**
+   * @see begin(const Pooled&)
+   */
+  Iterator begin() { return begin(mStub); }
+
+private:
+  Pooled mStub;
+  // HACK 要这么改，否则类型不安全：
+  // std::shared_ptr<T> mNext;
+};
+
+template<typename T>
+std::shared_ptr<T>
+Pooled<T>::Pool::take(Pooled& t) noexcept
+{
+  SpinBit prevBit(t.mPrev);
+  prevBit.lock();
+  auto here = t.mNext;
+  if (!here) {
+    prevBit.unlock();
+    return nullptr;
+  }
+
+  SpinBit hereBit(here->mPrev);
+  hereBit.lock();
+  auto next = here->mNext;
+  if (!next) {
+    t.mNext = nullptr;
+    prevBit.unlock(); // 尽可能早地释放锁
+    hereBit.masked(nullptr);
+    hereBit.unlock();
+    return here;
+  }
+
+  SpinBit nextBit(next->mPrev);
+  nextBit.lock();
+  t.mNext = next;
+  prevBit.unlock(); // 尽可能早地释放锁
+  nextBit.masked(&t);
+  nextBit.unlock(); // 尽可能早地释放锁
+
+  here->mNext = nullptr;
+  hereBit.masked(nullptr);
+  hereBit.unlock();
+  return here;
+}
+
+template<typename T>
+void
+Pooled<T>::Pool::give(Pooled& t, std::shared_ptr<T> r) noexcept
+{
+  assert(r != nullptr);
+  T& here = *r;
+  SpinBit hereBit(here.mPrev);
+  hereBit.lock();
+  assert(here.mNext == nullptr && here.mPrev == nullptr); // 在锁定之后再断言
+
+  SpinBit prevBit(t.mPrev);
+  prevBit.lock();
+  auto next = t.mNext;
+  if (!next) {
+    t.mNext = std::move(r);
+    prevBit.unlock(); // 尽可能早地释放锁
+    hereBit.masked(&t);
+    hereBit.unlock();
+    return;
+  }
+
+  SpinBit nextBit(next->mPrev);
+  nextBit.lock();
+  t.mNext = std::move(r);
+  prevBit.unlock(); // 尽可能早地释放锁
+  hereBit.masked(&t);
+
+  here.mNext = std::move(next);
+  nextBit.masked(&here);
+  hereBit.unlock();
+  nextBit.unlock();
+}
+
+template<typename T>
+void
+Pooled<T>::Pool::drop(T& t) noexcept
+{
+  while (true) {
+    SpinBit hereBit(t.mPrev);
+    hereBit.lock();
+    auto prev = hereBit.masked()->shared_from_this();
+    assert(prev != nullptr); // 在锁定之后再断言
+    hereBit.unlock();
+
+    // 先释放 hereBit，等 prevBit 锁定后再重新锁定，避免死锁
+    SpinBit prevBit(prev->mPrev);
+    prevBit.lock();
+    if (prev->mNext.get() != &t) {
+      prevBit.unlock();
+      continue; // 重试
+    }
+    hereBit.lock();
+
+    auto next = t.mNext;
+    if (!next) {
+      prev->mNext = nullptr;
+      prevBit.unlock(); // 尽可能早地释放锁
+      hereBit.masked(nullptr);
+      hereBit.unlock();
+      return;
+    }
+
+    SpinBit nextBit(next->mPrev);
+    nextBit.lock();
+    prev->mNext = std::move(t.mNext);
+    prevBit.unlock(); // 尽可能早地释放锁
+    nextBit.masked(prev.get());
+    nextBit.unlock(); // 尽可能早地释放锁
+
+    t.mNext = nullptr;
+    hereBit.masked(nullptr);
+    hereBit.unlock();
+    break;
+  }
+}
 
 } // namespace My

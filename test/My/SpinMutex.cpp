@@ -260,7 +260,10 @@ BOOST_AUTO_TEST_CASE(spin_bit)
               break;
           }
 
-          auto series = mutex.value();
+          auto series = mutex.masked();
+          mutex.masked(nullptr);
+          BOOST_TEST(mutex.masked() == nullptr);
+          mutex.masked(series);
           BOOST_TEST(series->check());
           series->assign(randgen::range(0, 100));
           mutex.unlock();

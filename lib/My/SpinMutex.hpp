@@ -252,11 +252,28 @@ struct SpinMutex::Bit
   }
 
   /**
-   * @brief 返回原始值。
+   * @brief 获取原始值。
    */
-  static T value(const std::atomic<T>& t) noexcept
+  static T masked(const std::atomic<T>& t) noexcept
   {
     return unset(t.load(std::memory_order_relaxed));
+  }
+
+  /**
+   * @brief 设置原始值。
+   */
+  static void masked(std::atomic<T>& t, T v) noexcept
+  {
+    T expected{};
+    do
+      if constexpr (std::is_pointer_v<T>)
+        v = reinterpret_cast<T>(reinterpret_cast<std::uintptr_t>(v) |
+                                reinterpret_cast<std::uintptr_t>(expected) &
+                                  (std::uintptr_t(1) << B));
+      else
+        v = v | (expected & (T(1) << B));
+    while (!t.compare_exchange_weak(
+      expected, v, std::memory_order_relaxed, std::memory_order_relaxed));
   }
 
   /**
@@ -317,7 +334,9 @@ struct SpinMutex::Bit
 
   bool locked() const noexcept { return locked(mT); }
 
-  T value() const noexcept { return value(mT); }
+  T masked() const noexcept { return masked(mT); }
+
+  void masked(T v) noexcept { masked(mT, v); }
 
   void lock() noexcept { lock(mT); }
 

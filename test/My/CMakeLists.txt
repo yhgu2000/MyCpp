@@ -21,3 +21,14 @@ target_compile_definitions(test+My+SpinMutex PRIVATE BOOST_TEST_MODULE=My+SpinMu
 add_test(NAME My+SpinMutex COMMAND test+My+SpinMutex)
 
 target_code_coverage(test+My+SpinMutex AUTO ALL)
+
+#
+# 多线程资源池相关测试
+#
+add_executable(test+My+Pooled Pooled.cpp)
+
+target_compile_definitions(test+My+Pooled PRIVATE BOOST_TEST_MODULE=My+Pooled)
+
+add_test(NAME My+Pooled COMMAND test+My+Pooled)
+
+target_code_coverage(test+My+Pooled AUTO ALL)
