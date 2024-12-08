@@ -17,18 +17,19 @@ class Timing;
 } // namespace My
 
 /**
- * @brief 计时宏，宏参数可以是表达式，也可以是语句块
+ * @brief 计时宏，宏参数可以是表达式，也可以是语句块，返回纳秒级计时。
  */
 #define MY_TIMING(code)                                                        \
   [&]() {                                                                      \
     auto __timing_begin__ = std::chrono::high_resolution_clock::now();         \
     code;                                                                      \
     auto __timing_end__ = std::chrono::high_resolution_clock::now();           \
-    return __timing_end__ - __timing_begin__;                                  \
+    return std::chrono::duration_cast<std::chrono::nanoseconds>(               \
+      __timing_end__ - __timing_begin__);                                      \
   }()
 
 /**
- * @brief n 次计时宏，宏参数可以是表达式，也可以是语句块
+ * @brief n 次计时宏，宏参数可以是表达式，也可以是语句块，返回纳秒级计时。
  */
 #define MY_NIMING(n, code)                                                     \
   [&]() {                                                                      \
@@ -36,7 +37,8 @@ class Timing;
     for (std::size_t __niming_n__ = 0; __niming_n__ < n; ++__niming_n__)       \
       code;                                                                    \
     auto __niming_end__ = std::chrono::high_resolution_clock::now();           \
-    return __niming_end__ - __niming_begin__;                                  \
+    return std::chrono::duration_cast<std::chrono::nanoseconds>(               \
+      __niming_end__ - __niming_begin__);                                      \
   }()
 
 /**
@@ -167,7 +169,7 @@ private:
   std::shared_ptr<Entry> mHead;
 
 private:
-  friend std::ostream& ::operator<<(std::ostream& out, const Timing& prof);
+  friend std::ostream& ::operator<<(std::ostream & out, const Timing & prof);
 };
 
 /**

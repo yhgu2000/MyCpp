@@ -4,6 +4,7 @@
 #include <atomic>
 #include <cassert>
 #include <memory>
+#include <mutex>
 
 namespace My {
 
@@ -32,18 +33,12 @@ class Pooled : public std::enable_shared_from_this<T>
 public:
   class Iterator;
   class Pool;
-  using SpinBit = SpinMutex::Bit<T*, 0>;
-
-  Pooled()
-    : mNext(nullptr)
-    , mPrev(nullptr)
-  {
-  }
+  using SpinBit = SpinMutex::Bit<Pooled*, 0>;
 
 private:
-  std::shared_ptr<T> mNext;
-  std::atomic<T*> mPrev; // 最低位用作自旋锁
-  static_assert(alignof(std::atomic<T*>) >= 4);
+  std::shared_ptr<T> mNext{ nullptr };
+  std::atomic<Pooled*> mPrev{ nullptr }; // 最低位用作自旋锁
+  static_assert(alignof(std::atomic<T*>) >= 2);
 };
 
 /**
@@ -58,10 +53,11 @@ public:
   /**
    * @param p 资源指针，必须未被锁定，遍历器构造完成后会被锁定。
    */
-  Iterator(std::shared_ptr<T> p)
+  Iterator(std::shared_ptr<T> p) noexcept
     : std::shared_ptr<T>(std::move(p))
   {
-    SpinBit::lock(std::shared_ptr<T>::operator*().mPrev);
+    if (*this)
+      SpinBit::lock(std::shared_ptr<T>::operator*().mPrev);
   }
 
   Iterator(const Iterator&) = delete;
@@ -69,7 +65,7 @@ public:
   Iterator& operator=(const Iterator&) = delete;
   Iterator& operator=(Iterator&&) = default;
 
-  ~Iterator()
+  ~Iterator() noexcept
   {
     if (*this)
       SpinBit::unlock(std::shared_ptr<T>::operator*().mPrev);
@@ -84,13 +80,10 @@ Pooled<T>::Iterator::operator++() noexcept
 {
   auto& t = std::shared_ptr<T>::operator*();
   auto next = t.mNext;
-  if (!next) {
-    std::shared_ptr<T>::reset();
-    return *this;
-  }
-  SpinBit::lock(next->mPrev);
-  SpinBit::unlock(t.mPrev);
+  if (next)
+    SpinBit::lock(next->mPrev);
   std::shared_ptr<T>::operator=(std::move(next));
+  SpinBit::unlock(t.mPrev);
   return *this;
 }
 
@@ -106,7 +99,7 @@ public:
    *
    * @return true - 在池中；false - 不在池中。
    */
-  static bool pooled(const Pooled& t) noexcept
+  static bool is_in(const Pooled& t) noexcept
   {
     return t.mPrev.load(std::memory_order_relaxed) != nullptr;
   }
@@ -136,33 +129,53 @@ public:
   /**
    * @brief 从节点 t 开始遍历池中的剩余资源。
    */
-  static Iterator begin(Pooled& t) { return { t.shared_from_this() }; }
+  static Iterator begin(T& t) noexcept { return { t.shared_from_this() }; }
 
   /**
    * @brief 遍历池中的剩余资源结束。
    */
-  static Iterator end() { return {}; }
+  static Iterator end() noexcept { return {}; }
+
+  /**
+   * @brief 对池中的资源进行计数，这会锁定遍历 t 后的所有剩余资源。
+   */
+  static std::size_t count(T& t) noexcept;
 
 public:
   /**
    * @see take(Pooled&)
    */
-  std::shared_ptr<T> take() { return take(mStub); }
+  std::shared_ptr<T> take() noexcept { return take(mStub); }
 
   /**
    * @see give(Pooled&, std::shared_ptr<T>)
    */
-  void give(std::shared_ptr<T> r) { give(mStub, std::move(r)); }
+  void give(std::shared_ptr<T> r) noexcept { give(mStub, std::move(r)); }
 
   /**
    * @see begin(const Pooled&)
    */
-  Iterator begin() { return begin(mStub); }
+  Iterator begin() noexcept
+  {
+    SpinBit::lock(mStub.mPrev);
+    Iterator ret(mStub.mNext);
+    SpinBit::unlock(mStub.mPrev);
+    return ret;
+  }
+
+  /**
+   * @see count(const Pooled&)
+   */
+  std::size_t count() noexcept
+  {
+    SpinBit::lock(mStub.mPrev);
+    auto head = mStub.mNext;
+    SpinBit::unlock(mStub.mPrev);
+    return count(*head);
+  }
 
 private:
   Pooled mStub;
-  // HACK 要这么改，否则类型不安全：
-  // std::shared_ptr<T> mNext;
 };
 
 template<typename T>
@@ -208,8 +221,8 @@ Pooled<T>::Pool::give(Pooled& t, std::shared_ptr<T> r) noexcept
   assert(r != nullptr);
   T& here = *r;
   SpinBit hereBit(here.mPrev);
-  hereBit.lock();
-  assert(here.mNext == nullptr && here.mPrev == nullptr); // 在锁定之后再断言
+  hereBit.lock(); // 在锁定之后再断言
+  assert(here.mNext == nullptr && hereBit.masked() == nullptr);
 
   SpinBit prevBit(t.mPrev);
   prevBit.lock();
@@ -275,6 +288,16 @@ Pooled<T>::Pool::drop(T& t) noexcept
     hereBit.unlock();
     break;
   }
+}
+
+template<typename T>
+std::size_t
+Pooled<T>::Pool::count(T& t) noexcept
+{
+  std::size_t cnt = 0;
+  for (auto it = begin(t), end = Pool::end(); it != end; ++it)
+    ++cnt;
+  return cnt;
 }
 
 } // namespace My
