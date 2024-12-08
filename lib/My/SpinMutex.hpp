@@ -297,9 +297,14 @@ struct SpinMutex::Bit
 
   static void unlock(std::atomic<T>& t) noexcept
   {
-    auto v = t.load(std::memory_order_relaxed);
-    assert(test(v));
-    t.store(unset(v), std::memory_order_release);
+    if constexpr (std::is_pointer_v<T>) {
+      auto v = t.load(std::memory_order_relaxed);
+      assert(test(v));
+      t.store(unset(v), std::memory_order_release);
+    } else {
+      assert(test(t.load(std::memory_order_relaxed)));
+      t.fetch_and(~(T(1) << B), std::memory_order_release);
+    }
   }
 
   static bool try_lock(std::atomic<T>& t) noexcept
