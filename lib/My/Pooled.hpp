@@ -193,6 +193,28 @@ struct Pooled : _Pooled::Node
 {
   class Iterator;
   class Pool;
+
+  std::shared_ptr<T> shared_from_this() noexcept
+  {
+    return std::reinterpret_pointer_cast<T>(_Pooled::Node::shared_from_this());
+  }
+
+  std::shared_ptr<const T> shared_from_this() const noexcept
+  {
+    return std::reinterpret_pointer_cast<const T>(
+      _Pooled::Node::shared_from_this());
+  }
+
+  std::weak_ptr<T> weak_from_this() noexcept
+  {
+    return std::reinterpret_pointer_cast<T>(_Pooled::Node::shared_from_this());
+  }
+
+  std::weak_ptr<const T> weak_from_this() const noexcept
+  {
+    return std::reinterpret_pointer_cast<const T>(
+      _Pooled::Node::shared_from_this());
+  }
 };
 
 template<typename T>
