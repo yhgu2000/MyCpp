@@ -5,9 +5,9 @@
 
 using namespace My;
 
-struct EmptyRC : public Pooled<EmptyRC>
+struct RC : public Pooled<RC>
 {
-  EmptyRC(int i)
+  RC(int i)
     : mI(i)
   {
   }
@@ -15,31 +15,46 @@ struct EmptyRC : public Pooled<EmptyRC>
   int mI;
 };
 
+struct SubRC : public RC
+{
+  SubRC(int i)
+    : RC(i)
+  {
+  }
+};
+
 BOOST_AUTO_TEST_CASE(basic)
 {
-  EmptyRC::Pool pool;
+  RC::Pool pool;
 
-  auto rc1 = std::make_shared<EmptyRC>(1);
+  auto rc1 = std::make_shared<RC>(1);
   pool.give(rc1);
-  BOOST_TEST(EmptyRC::Pool::is_in(*rc1));
+  BOOST_TEST(RC::Pool::is_in(*rc1));
 
   BOOST_TEST(pool.take() == rc1);
-  BOOST_TEST(!EmptyRC::Pool::is_in(*rc1));
+  BOOST_TEST(!RC::Pool::is_in(*rc1));
   pool.give(rc1);
 
-  auto rc2 = std::make_shared<EmptyRC>(2);
+  auto rc2 = std::make_shared<RC>(2);
   pool.give(rc2);
-  BOOST_TEST(EmptyRC::Pool::is_in(*rc2));
+  BOOST_TEST(RC::Pool::is_in(*rc2));
 
-  EmptyRC::Pool::drop(*rc1);
-  BOOST_TEST(!EmptyRC::Pool::is_in(*rc1));
+  auto rc3 = std::make_shared<SubRC>(3);
+  pool.give(rc3);
+  BOOST_TEST(RC::Pool::is_in(*rc3));
 
+  BOOST_TEST(pool.count() == 3);
+
+  RC::Pool::drop(*rc1);
+  BOOST_TEST(!RC::Pool::is_in(*rc1));
+
+  BOOST_TEST(pool.take_if<SubRC>() == rc3);
   BOOST_TEST(pool.take() == rc2);
 }
 
 BOOST_AUTO_TEST_CASE(concurrent)
 {
-  EmptyRC::Pool pool;
+  RC::Pool pool;
 
   std::vector<std::thread> threads(std::thread::hardware_concurrency());
   for (auto& t : threads) {
@@ -47,7 +62,7 @@ BOOST_AUTO_TEST_CASE(concurrent)
       for (int i = 0; i < 1000; ++i) {
         auto rc = pool.take();
         if (!rc)
-          rc = std::make_shared<EmptyRC>(i);
+          rc = std::make_shared<RC>(i);
         pool.give(rc);
       }
     });
@@ -71,7 +86,7 @@ BOOST_AUTO_TEST_CASE(performance)
   auto threadsNum =
     threadsEnv ? std::atoi(threadsEnv) : std::thread::hardware_concurrency();
 
-  EmptyRC::Pool pool;
+  RC::Pool pool;
   auto ns = timing({
               std::vector<std::thread> threads(threadsNum);
               for (auto& t : threads) {
@@ -79,7 +94,7 @@ BOOST_AUTO_TEST_CASE(performance)
                   for (int i = 0; i < loops; ++i) {
                     auto rc = pool.take();
                     if (!rc)
-                      rc = std::make_shared<EmptyRC>(i);
+                      rc = std::make_shared<RC>(i);
                     pool.give(rc);
                   }
                 });
