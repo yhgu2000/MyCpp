@@ -30,14 +30,14 @@ HttpHandler::stop()
 }
 
 void
-HttpHandler::on_handle(std::exception_ptr eptr)
+HttpHandler::on_handle(std::exception_ptr eptr) noexcept
 {
   auto timingEnd = std::chrono::high_resolution_clock::now();
 
   std::string errstr;
   if (eptr) {
     try {
-      std::rethrow_exception(eptr);
+      std::rethrow_exception(std::move(eptr));
     } catch (My::Err& e) {
       errstr = "\n"s + e.what() + " | " + e.info();
     } catch (std::exception& e) {
@@ -90,7 +90,11 @@ HttpHandler::do_write()
 {
   mResponse.version(11);
 
-  if (mRequest.keep_alive() && mKeepAliveCount < mConfig.mKeepAliveMax) {
+  if (!mRequest.keep_alive()) {
+    mResponse.keep_alive(false);
+  } else if (mConfig.mKeepAliveMax == UINT32_MAX) {
+    mResponse.keep_alive(true);
+  } else if (mKeepAliveCount <= mConfig.mKeepAliveMax) {
     mResponse.keep_alive(true);
     mResponse.set(http::field::connection, "keep-alive");
     mResponse.set(http::field::keep_alive,
@@ -118,13 +122,14 @@ HttpHandler::on_write(const BoostEC& ec, std::size_t len)
     return;
   }
 
-  if (mKeepAliveCount < mConfig.mKeepAliveMax) {
+  if (mConfig.mKeepAliveMax == UINT32_MAX) {
+    do_read();
+  } else if (mKeepAliveCount < mConfig.mKeepAliveMax) {
     ++mKeepAliveCount;
     do_read();
-    return;
+  } else {
+    do_close("finished");
   }
-
-  do_close("finished");
 }
 
 void

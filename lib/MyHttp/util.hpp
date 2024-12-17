@@ -18,6 +18,8 @@ using BoostEC = boost::system::error_code;
 template<typename T>
 using BoostResult = boost::system::result<T>;
 
+using Executor = ba::any_io_executor;
+
 using Socket = ba::ip::tcp::socket;
 using Endpoint = ba::ip::tcp::endpoint;
 

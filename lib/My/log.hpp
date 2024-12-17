@@ -25,8 +25,8 @@ class Logger : public boost::log::sources::severity_channel_logger<Level>
 public:
   Logger() = default;
 
-  Logger(const std::string& channel)
-    : _S(boost::log::keywords::channel = channel)
+  Logger(std::string channel)
+    : _S(boost::log::keywords::channel = std::move(channel))
   {
   }
 
@@ -34,8 +34,8 @@ public:
    * @param channel 日志通道，和代码静态关联。
    * @param object 对象标识符，运行时动态生成。
    */
-  Logger(const std::string& channel, const void* object)
-    : _S(boost::log::keywords::channel = channel)
+  Logger(std::string channel, const void* object)
+    : _S(boost::log::keywords::channel = std::move(channel))
   {
     add_attribute("ObjectID",
                   boost::log::attributes::constant<const void*>(object));
@@ -50,8 +50,8 @@ class LoggerMt : public boost::log::sources::severity_channel_logger_mt<Level>
 public:
   LoggerMt() = default;
 
-  LoggerMt(const std::string& channel)
-    : _S(boost::log::keywords::channel = channel)
+  LoggerMt(std::string channel)
+    : _S(boost::log::keywords::channel = std::move(channel))
   {
   }
 
@@ -59,8 +59,8 @@ public:
    * @param channel 日志通道，和代码静态关联。
    * @param object 对象标识符，运行时动态生成。
    */
-  LoggerMt(const std::string& channel, const void* object)
-    : _S(boost::log::keywords::channel = channel)
+  LoggerMt(std::string channel, const void* object)
+    : _S(boost::log::keywords::channel = std::move(channel))
   {
     add_attribute("ObjectID",
                   boost::log::attributes::constant<const void*>(object));

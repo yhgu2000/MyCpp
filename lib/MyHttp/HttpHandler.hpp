@@ -18,10 +18,10 @@ public:
   {
     /// 每个会话的缓冲区大小
     std::size_t mBufferLimit{ 8 << 10 };
-    /// 保活超时，单位：秒
+    /// 保活超时限制，超时无活动的连接会被关闭
     std::uint32_t mKeepAliveTimeout{ 3 };
-    /// 保活最大请求数
-    std::uint32_t mKeepAliveMax{ 10 };
+    /// 保活次数限制，超过次数的连接会被关闭，UINT32_MAX 表示无限制
+    std::uint32_t mKeepAliveMax{ UINT32_MAX };
   };
 
   /**
@@ -46,8 +46,8 @@ protected:
    */
   HttpHandler(Socket&& sock,
               Config& config,
-              const char* logName = "HttpHandler")
-    : mLogger(logName, this)
+              std::string logName = "MyHttp::HttpHandler")
+    : mLogger(std::move(logName), this)
     , mConfig(config)
     , mStream(std::move(sock))
     , mBuffer(config.mBufferLimit)
@@ -76,7 +76,7 @@ protected:
    *
    * @param eptr 异常指针，不为空时视为处理出错。
    */
-  void on_handle(std::exception_ptr eptr);
+  void on_handle(std::exception_ptr eptr) noexcept;
 
 private:
   const Config& mConfig;
