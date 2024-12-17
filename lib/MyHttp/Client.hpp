@@ -1,5 +1,9 @@
 #pragma once
 
+#ifndef MYHTTP_CLIENT_PRIVATE
+#define MYHTTP_CLIENT_PRIVATE private:
+#endif
+
 #include "util.hpp"
 
 #include <My/Pooled.hpp>
@@ -10,42 +14,44 @@ namespace MyHttp {
 
 using namespace util;
 
+namespace {
+template<typename T>
+struct _Client;
+} // namespace
+
 /**
  * @brief 客户端类，实现了 TCP 连接复用。
  */
 class Client
 {
 public:
-  struct Connection : My::Pooled<Connection>
+  struct Config
   {
-    Connection(ba::io_context& ioCtx)
-      : mSocket(ba::make_strand(ioCtx))
-      , mTimer(mSocket.get_executor())
-    {
-    }
-
-    My::log::Logger mLogger{ "Client::Connection", this };
-    Socket mSocket;
-    ba::steady_timer mTimer;
+    // 目标服务器地址
+    std::string mHost;
+    // 目标服务器端口
+    std::string mPort;
+    /// 每个会话的缓冲区大小
+    std::size_t mBufferLimit{ 8 << 10 };
+    // 连接超时限制，超时未连接成功则重试
+    ba::steady_timer::duration mTimeout = std::chrono::seconds(3);
+    // 请求重试次数，超出则视为失败
+    std::uint32_t mMaxRetry{ 1 };
+    // 保活超时限制，超时无活动的连接会被关闭
+    ba::steady_timer::duration mKeepAliveTimeout = std::chrono::seconds(3);
   };
 
-  ba::io_context& mIoCtx;
+  // 异步执行器
+  Executor& mEx;
+  // 客户端配置
+  const Config& mConfig;
+  // 日志器名称
+  const std::string mLogName;
 
-  // 目标服务器地址
-  const std::string mHost;
-  // 目标服务器端口
-  const std::string mPort;
-  // 连接超时时间（单位：毫秒）
-  const ba::steady_timer::duration mTimeout{ 3000 };
-
-  Client(ba::io_context& ioCtx,
-         std::string host,
-         std::string port,
-         const char* loggerName = "Client")
-    : mIoCtx(ioCtx)
-    , mHost(std::move(host))
-    , mPort(std::move(port))
-    , mLogger(loggerName, this)
+  Client(Executor& ex, Config& config, std::string logName = "MyHttp::Client")
+    : mEx(ex)
+    , mConfig(config)
+    , mLogName(std::move(logName))
   {
   }
 
@@ -70,9 +76,23 @@ public:
   void async_http(Request req, std::function<void(BoostResult<Response>&&)> cb);
 
 private:
-  My::log::LoggerMt mLogger;
-  Connection::Pool mPool;
-  ba::ip::tcp::resolver mResolver{ mIoCtx };
+  MYHTTP_CLIENT_PRIVATE
+
+  struct Connection : My::Pooled<Connection>
+  {
+    Connection(Executor& ex)
+      : mTimer(ba::make_strand(ex))
+      , mResolver(mTimer.get_executor())
+      , mSocket(mTimer.get_executor())
+    {
+    }
+
+    ba::steady_timer mTimer;
+    ba::ip::tcp::resolver mResolver;
+    Socket mSocket;
+  };
+
+  Connection::Pool mConnPool;
 };
 
 } // namespace MyHttp

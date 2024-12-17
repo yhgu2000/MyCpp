@@ -1,3 +1,4 @@
+#define MYHTTP_CLIENT_PRIVATE public:
 #include "Client.hpp"
 
 #include <My/err.hpp>
@@ -12,61 +13,139 @@ namespace {
 
 using Conn = std::shared_ptr<Client::Connection>;
 
-// 续程类？续程类！
-struct ResolveAndConnect : std::enable_shared_from_this<ResolveAndConnect>
+struct AsyncHttp
+{};
+
+template<>
+struct _Client<AsyncHttp> : std::enable_shared_from_this<_Client<AsyncHttp>>
 {
-  ba::io_context& mIoCtx;
-  std::function<void(Conn)> mCb;
-
-  void exec(My::log::LoggerMt& logger,
-            ba::ip::tcp::resolver& resolver,
-            const std::string& host,
-            const std::string& port)
-  {
-    assert(conn);
-    resolver.async_resolve(
-      host, port, [&, self = shared_from_this()](auto&& a, auto&& b) {
-        on_resolve(logger, a, std::move(b));
-      });
-  }
-
-  void on_resolve(My::log::LoggerMt& logger,
-                  const BoostEC& ec,
-                  ba::ip::tcp::resolver::results_type results)
-  {
-    if (ec) {
-      BOOST_LOG_SEV(logger, warn) << "resolve failed: " << ec.message();
-      return;
-    }
-
-    auto conn = std::make_shared<Client::Connection>(mIoCtx);
-    conn->mSocket.async_connect(
-      *results, [&, conn, self = shared_from_this()](auto&& a) mutable {
-        on_connect(a, std::move(conn));
-      });
-  }
-
-  void on_connect(const BoostEC& ec, Conn conn)
-  {
-    if (ec) {
-      BOOST_LOG_SEV(conn->mLogger, warn) << "connect failed: " << ec.message();
-      return;
-    }
-    mCb(std::move(conn));
-  }
-};
-
-struct RequestAndResponse : std::enable_shared_from_this<RequestAndResponse>
-{
+  Client& _;
+  My::log::Logger mLogger;
   std::function<void(BoostResult<Response>&&)> mCb;
 
-  Conn mConn;
-
-  void exec(Conn conn, Request req)
+  _Client(Client& _,
+          const char* loggerName,
+          std::function<void(BoostResult<Response>&&)> cb)
+    : _(_)
+    , mLogger(loggerName, this)
+    , mCb(std::move(cb))
   {
-    assert(conn);
-    mConn = std::move(conn);
-    // TOOD
+  }
+
+  void exec(Request&& req) { mReq = std::move(req), do_request(); }
+
+private:
+  Conn mConn;
+  std::uint32_t mRetry{ 0 };
+
+  Request mReq;
+  bb::flat_buffer mBuf;
+  Response mRes;
+
+  void do_request()
+  {
+    mConn = _.mConnPool.take();
+    if (!mConn) {
+      mConn = std::make_shared<Client::Connection>(_.mEx);
+      mConn->mResolver.async_resolve(
+        _.mConfig.mHost,
+        _.mConfig.mPort,
+        [&, self = shared_from_this()](auto&& a, auto&& b) {
+          on_resolve(a, b);
+        });
+      return;
+    }
+
+    // TODO how to timeout?
+
+    http::async_write(
+      mConn->mSocket, mReq, [self = shared_from_this()](auto&& a, auto&& b) {
+        self->on_write(a, b);
+      });
+  }
+
+  void on_resolve(const BoostEC& ec,
+                  const ba::ip::tcp::resolver::results_type& results) noexcept
+  {
+    if (ec) {
+      BOOST_LOG_SEV(mLogger, warn) << "resolve failed: " << ec.message();
+      return;
+    }
+
+    mConn->mSocket.async_connect(
+      *results, [&, self = shared_from_this()](auto&& a) mutable {
+        self->on_connect(a);
+      });
+  }
+
+  void on_connect(const BoostEC& ec) noexcept
+  {
+    if (ec) {
+      if (mRetry >= _.mConfig.mMaxRetry) {
+        BOOST_LOG_SEV(mLogger, warn) << "connect failed: " << ec.message();
+        return;
+      }
+
+      BOOST_LOG_SEV(mLogger, info) << "connect failed: " << ec.message()
+                                   << ", retrying(" << ++mRetry << ")...";
+      do_request();
+      return;
+    }
+
+    http::async_write(
+      mConn->mSocket, mReq, [self = shared_from_this()](auto&& a, auto&& b) {
+        self->on_write(a, b);
+      });
+  }
+
+  void on_write(const BoostEC& ec, std::size_t len) noexcept
+  {
+    if (ec) {
+      if (mRetry >= _.mConfig.mMaxRetry) {
+        BOOST_LOG_SEV(mLogger, warn) << "write failed: " << ec.message();
+        return;
+      }
+
+      BOOST_LOG_SEV(mLogger, info) << "write failed: " << ec.message()
+                                   << ", retrying(" << ++mRetry << ")...";
+      do_request();
+      return;
+    }
+
+    http::async_read(
+      mConn->mSocket,
+      mBuf,
+      mRes,
+      [self = shared_from_this()](auto&& a, auto&& b) { self->on_read(a, b); });
+  }
+
+  void on_read(const BoostEC& ec, std::size_t len) noexcept
+  {
+    if (ec) {
+      BOOST_LOG_SEV(mLogger, warn) << "read failed: " << ec.message();
+      return;
+      // 如果读取响应失败，就不能再重试了，因为数据已经发出了，服务器状态可能已经改变。
+    }
+
+    auto keepAlive = mRes.keep_alive();
+    mCb(std::move(mRes));
+    if (keepAlive) {
+      _.mConnPool.give(std::move(mConn));
+      return;
+      // TODO 定时失效再取出
+    }
+
+    {
+      BoostEC ec;
+      mConn->mSocket.shutdown(Socket::shutdown_both, ec);
+      if (ec)
+        BOOST_LOG_SEV(mLogger, warn) << "shutdown failed: " << ec.message();
+      mConn->mSocket.close(ec);
+      if (ec)
+        BOOST_LOG_SEV(mLogger, warn) << "close failed: " << ec.message();
+      // 这里显式地优雅关闭套接字，在出错情况下，boost::asio::ip::tcp::socket
+      // 的析构函数会自动关闭套接字，不用担心资源泄漏的问题。
+    }
   }
 };
 
@@ -78,9 +157,12 @@ Client::http(const Request& req) noexcept {
 };
 
 void
-Client::async_http(Request req,
-                   std::function<void(BoostResult<Response>&&)> cb) {
-  // TODO
+Client::async_http(Request req, std::function<void(BoostResult<Response>&&)> cb)
+{
+  ba::post(mEx,
+           [x = std::make_shared<_Client<AsyncHttp>>(
+              *this, mLogName.c_str(), std::move(cb)),
+            req = std::move(req)]() mutable { x->exec(std::move(req)); });
 };
 
 } // namespace MyHttp
