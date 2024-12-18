@@ -122,10 +122,9 @@ HttpHandler::on_write(const BoostEC& ec, std::size_t len)
     return;
   }
 
-  if (mConfig.mKeepAliveMax == UINT32_MAX) {
-    do_read();
-  } else if (mKeepAliveCount < mConfig.mKeepAliveMax) {
-    ++mKeepAliveCount;
+  ++mKeepAliveCount;
+  if (mConfig.mKeepAliveMax == UINT32_MAX ||
+      mKeepAliveCount < mConfig.mKeepAliveMax) {
     do_read();
   } else {
     do_close("finished");

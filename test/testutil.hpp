@@ -36,7 +36,13 @@ noopt(T&& a)
  * @brief 设置日志输出阈值。
  */
 void
-init_loglevel(int loglevel = My::log::Level::info);
+init_loglevel(int loglevel = My::log::Level::verb);
+
+/**
+ * @brief 重设日志输出阈值。
+ */
+void
+reset_loglevel(int loglevel = My::log::Level::noti);
 
 /**
  * @brief 随机数生成工具

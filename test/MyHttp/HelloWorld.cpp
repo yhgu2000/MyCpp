@@ -39,4 +39,14 @@ BOOST_AUTO_TEST_CASE(basic)
   BOOST_REQUIRE(res);
   BOOST_TEST(res->result() == bb::http::status::ok);
   BOOST_TEST(bool(res->body() == "Hello, World!"_b));
+
+  std::atomic<bool> done(false);
+  client.async_http(req, [&](auto&& res) {
+    BOOST_REQUIRE(res);
+    BOOST_TEST(res->result() == bb::http::status::ok);
+    BOOST_TEST(bool(res->body() == "Hello, World!"_b));
+    done = true;
+  });
+  while (!done)
+    std::this_thread::sleep_for(100ms);
 }
