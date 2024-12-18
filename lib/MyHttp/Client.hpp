@@ -14,11 +14,6 @@ namespace MyHttp {
 
 using namespace util;
 
-namespace {
-template<typename T>
-struct _Client;
-} // namespace
-
 /**
  * @brief 客户端类，实现了 TCP 连接复用。
  */
