@@ -83,6 +83,8 @@ public:
   /// 如果析构时正在运行，则尝试停止并阻塞。
   ~ThreadsExecutor() noexcept { stop(); }
 
+  operator Executor() { return mIoCtx.get_executor(); }
+
   /**
    * @brief 启动执行器，创建工作线程并让它们运行 io_context::run
    * 当前线程立刻返回，不运行工作。

@@ -1,9 +1,6 @@
 #include "testutil.hpp"
 
-#include <My/util.hpp>
-
 using namespace My;
-using namespace My::util;
 
 /**
  * @brief 测试计时器的性能

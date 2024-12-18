@@ -1,6 +1,7 @@
 #pragma once
 
 #include "HttpHandler.hpp"
+#include "Server.hpp"
 
 namespace MyHttp {
 
@@ -11,13 +12,31 @@ namespace MyHttp {
 class HttpHelloWorld : public HttpHandler
 {
 public:
+  class Server;
+
   HttpHelloWorld(Socket&& sock, Config& config)
-    : HttpHandler(std::move(sock), config, "HttpHelloWorld")
+    : HttpHandler(std::move(sock), config, "MyHttp::HttpHelloWorld")
   {
   }
 
 private:
   void do_handle() noexcept override;
+};
+
+class HttpHelloWorld::Server : public MyHttp::Server
+{
+  HttpHandler::Config& mConfig;
+
+  void come(Socket&& sock) override;
+
+public:
+  Server(HttpHandler::Config& config,
+         Executor ex,
+         std::string logName = "MyHttp::HttpHelloWorld::Server")
+    : MyHttp::Server(std::move(ex), std::move(logName))
+    , mConfig(config)
+  {
+  }
 };
 
 } // namespace MyHttp

@@ -1,9 +1,26 @@
 #include "testutil.hpp"
+#include <boost/log/utility/setup/common_attributes.hpp>
+#include <boost/log/utility/setup/console.hpp>
 
 void
 noopt_impl(void* a)
 {
   assert(!a);
+}
+
+static int gLogLevel;
+
+void
+init_loglevel(int logLevel)
+{
+  gLogLevel = logLevel;
+  boost::log::add_common_attributes();
+  boost::log::add_console_log(std::clog,
+                              boost::log::keywords::format = &My::log::format);
+  boost::log::core::get()->set_filter(
+    [](const boost::log::attribute_value_set& attrs) {
+      return attrs["Severity"].extract<My::log::Level>() >= gLogLevel;
+    });
 }
 
 namespace randgen {

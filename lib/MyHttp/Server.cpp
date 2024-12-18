@@ -8,36 +8,37 @@ using namespace My::log;
 
 namespace MyHttp {
 
-Server::~Server() noexcept
+BoostEC
+Server::start(const Endpoint& endpoint, int backlog)
 {
-  if (mIoCtx.stopped())
-    return;
+  BoostEC ec;
+  mAcpt.open(endpoint.protocol(), ec);
+  if (ec) {
+    BOOST_LOG_SEV(mLogger, verb) << "open failed: " << ec.message();
+    return ec;
+  }
 
-  std::atomic<bool> stopped = false;
-  ba::post(mAcpt.get_executor(), [this, &stopped] {
-    if (mAcpt.is_open()) {
-      mAcpt.cancel(), mAcpt.close();
-      BOOST_LOG_SEV(mLogger, noti) << "closed in destructor";
-    }
-    stopped.store(true, std::memory_order_release);
-  });
+  mAcpt.set_option(ba::socket_base::reuse_address(true), ec);
+  if (ec) {
+    BOOST_LOG_SEV(mLogger, verb) << "set_option failed: " << ec.message();
+    return ec;
+  }
 
-  while (!stopped.load(std::memory_order_acquire))
-    ;
-}
+  mAcpt.bind(endpoint, ec);
+  if (ec) {
+    BOOST_LOG_SEV(mLogger, verb) << "bind failed: " << ec.message();
+    return ec;
+  }
 
-void
-Server::start(const Endpoint& endpoint)
-{
-  ba::post(mAcpt.get_executor(), [this, endpoint] {
-    mAcpt.open(endpoint.protocol());
-    mAcpt.set_option(ba::socket_base::reuse_address(true));
-    mAcpt.bind(endpoint);
-    mAcpt.listen();
-    BOOST_LOG_SEV(mLogger, noti) << "started on " << endpoint;
+  mAcpt.listen(backlog, ec);
+  if (ec) {
+    BOOST_LOG_SEV(mLogger, verb) << "listen failed: " << ec.message();
+    return ec;
+  }
 
-    do_accept();
-  });
+  BOOST_LOG_SEV(mLogger, noti) << "started on " << endpoint;
+  do_accept();
+  return ec;
 }
 
 void
@@ -52,8 +53,9 @@ Server::stop()
 void
 Server::do_accept()
 {
-  mAcpt.async_accept(
-    mIoCtx, [this](auto&& a, auto&& b) { on_accept(a, std::move(b)); });
+  mAcpt.async_accept(mAcpt.get_executor(), [this](auto&& a, auto&& b) {
+    on_accept(a, std::move(b));
+  });
 }
 
 void
@@ -61,7 +63,7 @@ Server::on_accept(const BoostEC& ec, Socket&& sock)
 {
   if (ec) {
     if (ec != ba::error::operation_aborted)
-      BOOST_LOG_SEV(mLogger, crit) << "accept failed: " << ec.message();
+      BOOST_LOG_SEV(mLogger, verb) << "accept failed: " << ec.message();
     return;
   }
   BOOST_LOG_SEV(mLogger, verb) << "accepted " << sock.remote_endpoint();

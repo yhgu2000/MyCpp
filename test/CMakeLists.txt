@@ -45,3 +45,6 @@ target_code_coverage(test+)
 
 # My 库测试
 add_subdirectory(My)
+
+# MyHttp 库测试
+add_subdirectory(MyHttp)

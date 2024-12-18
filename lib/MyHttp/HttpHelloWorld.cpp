@@ -15,4 +15,10 @@ HttpHelloWorld::do_handle() noexcept
   on_handle(nullptr);
 }
 
+void
+HttpHelloWorld::Server::come(Socket&& sock)
+{
+  std::make_shared<HttpHelloWorld>(std::move(sock), mConfig)->start();
+}
+
 } // namespace MyHttp

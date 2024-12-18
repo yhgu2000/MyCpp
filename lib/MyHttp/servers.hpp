@@ -11,8 +11,8 @@ public:
   /// HTTP 处理器的配置，运行中不可更改。
   HttpHandler::Config mConfig;
 
-  HelloWorld(ba::io_context& ioCtx)
-    : Server(ioCtx, "servers::HelloWorld")
+  HelloWorld(Executor ex)
+    : Server(std::move(ex), "servers::HelloWorld")
   {
   }
 
@@ -26,8 +26,8 @@ public:
   /// HTTP 处理器的配置，运行中不可更改。
   HttpHandler::Config mConfig;
 
-  Matpowsum(ba::io_context& ioCtx)
-    : Server(ioCtx, "servers::Matpowsum")
+  Matpowsum(Executor ex)
+    : Server(std::move(ex), "servers::Matpowsum")
   {
   }
 

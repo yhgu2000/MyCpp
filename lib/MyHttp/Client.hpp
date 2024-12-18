@@ -37,14 +37,14 @@ public:
   };
 
   // 异步执行器
-  Executor& mEx;
+  Executor mEx;
   // 客户端配置
   const Config& mConfig;
   // 日志器名称
   const std::string mLogName;
 
-  Client(Executor& ex, Config& config, std::string logName = "MyHttp::Client")
-    : mEx(ex)
+  Client(Config& config, Executor ex, std::string logName = "MyHttp::Client")
+    : mEx(std::move(ex))
     , mConfig(config)
     , mLogName(std::move(logName))
   {
@@ -58,7 +58,7 @@ public:
    * @param req 请求对象。
    * @return 响应对象。
    */
-  BoostResult<Response> http(const Request& req) noexcept;
+  BoostResult<Response> http(Request& req) noexcept;
 
   /**
    * @brief 异步发送 HTTP 请求。

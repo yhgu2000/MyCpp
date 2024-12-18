@@ -80,12 +80,12 @@ handle_keep_alive(Conn conn,
 
   // 将连接放回连接池，并设定计时器等过了有效时间将其丢弃。
   client.mConnPool.give(conn);
+  conn->mTimer.expires_after(timeout);
   conn->mTimer.async_wait([conn = std::move(conn)](auto&& ec) {
     if (!ec)
       Client::Connection::Pool::drop(*conn);
     // 如果是这种情况，我们就不要优雅关闭连接了，因为远端可能已经关闭过了。
   });
-  conn->mTimer.expires_after(timeout);
 }
 
 struct AsyncHttp : std::enable_shared_from_this<AsyncHttp>
@@ -263,8 +263,10 @@ private:
 } // namespace
 
 BoostResult<Response>
-Client::http(const Request& req) noexcept
+Client::http(Request& req) noexcept
 {
+  req.prepare_payload();
+
   My::log::Logger logger(mLogName, this);
   StdHRC::time_point timingTotal, timing;
   timingTotal = StdHRC::now();
@@ -357,6 +359,7 @@ Client::http(const Request& req) noexcept
 void
 Client::async_http(Request req, std::function<void(BoostResult<Response>&&)> cb)
 {
+  req.prepare_payload();
   ba::post(mEx,
            [x = std::make_shared<AsyncHttp>(*this, mLogName, std::move(cb)),
             req = std::move(req)]() mutable { x->exec(std::move(req)); });

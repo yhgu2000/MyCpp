@@ -2,7 +2,6 @@
 
 #include "util.hpp"
 
-#include <My/Standing.hpp>
 #include <My/log.hpp>
 
 #include <thread>
@@ -15,27 +14,24 @@ using namespace util;
 /**
  * @brief 服务器类，监听端口并创建处理器。
  */
-class Server : public My::Standing
+class Server
 {
 public:
-  ba::io_context& mIoCtx;
-
-  Server(ba::io_context& ioCtx, const char* loggerName = "Server")
-    : mIoCtx(ioCtx)
-    , mLogger(loggerName, this)
-    , mAcpt(ioCtx)
+  Server(Executor ex, std::string logName = "MyHttp::Server")
+    : mLogger(std::move(logName), this)
+    , mAcpt(std::move(ex))
   {
   }
-
-  /// 如果析构时服务器正在运行，则尝试停止并阻塞。
-  virtual ~Server() noexcept;
 
   /**
    * @brief 启动服务，监听端口。
    *
    * @param endpoint 监听端点。
+   * @param backlog 最大等待连接数。
+   * @return 启动成功返回假值，否则返回错误码真值。
    */
-  void start(const Endpoint& endpoint);
+  BoostEC start(const Endpoint& endpoint,
+                int backlog = ba::socket_base::max_listen_connections);
 
   /**
    * @brief 停止监听。

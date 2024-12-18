@@ -4,6 +4,8 @@
 
 #include "project.h"
 #include <My/Timing.hpp>
+#include <My/log.hpp>
+#include <My/util.hpp>
 #include <chrono>
 #include <iomanip>
 #include <iostream>
@@ -13,6 +15,7 @@
 
 using namespace std::chrono_literals;
 using namespace std::string_literals;
+using namespace My::util;
 
 #define timing(code) MY_TIMING(code)
 #define niming(n, code) MY_NIMING(n, code)
@@ -28,6 +31,12 @@ noopt(T&& a)
   noopt_impl(&a);
   return a;
 }
+
+/**
+ * @brief 设置日志输出阈值。
+ */
+void
+init_loglevel(int loglevel = My::log::Level::info);
 
 /**
  * @brief 随机数生成工具
