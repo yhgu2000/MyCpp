@@ -172,6 +172,24 @@ Stub::drop(Node& node) noexcept
   }
 }
 
+void
+Stub::clear(Node& after) noexcept
+{
+  auto prev = after.shared_from_this();
+  SpinBit::lock(prev->mPrev);
+
+  auto here = std::move(prev->mNext);
+  SpinBit::unlock(prev->mPrev);
+  while (here) {
+    SpinBit::lock(here->mPrev);
+    auto next = std::move(here->mNext);
+    here->mPrev.store(0, std::memory_order_release);
+    // 上面这一步同时释放了 here 的锁
+    here = std::move(next);
+    // here 指向的对象会直到在引用计数为 0 才被销毁
+  }
+}
+
 std::size_t
 Stub::count(Node& node) noexcept
 {

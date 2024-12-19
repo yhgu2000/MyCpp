@@ -125,6 +125,11 @@ public:
   static void drop(Node& node) noexcept;
 
   /**
+   * @brief 丢弃 after 之后的所有资源。
+   */
+  static void clear(Node& after) noexcept;
+
+  /**
    * @brief 从 node 开始遍历池中的剩余资源。
    */
   static Iterator begin(Node& node) noexcept
@@ -138,7 +143,7 @@ public:
   static Iterator end() noexcept { return {}; }
 
   /**
-   * @brief 对池中的资源进行计数，这会锁定遍历 node 后的所有剩余资源。
+   * @brief 统计 node 及之后的资源数量，这会锁定遍历 node 后的所有剩余资源。
    */
   static std::size_t count(Node& node) noexcept;
 
@@ -163,6 +168,8 @@ public:
     SpinBit::lock(mPrev);
     auto head = mNext;
     SpinBit::unlock(mPrev);
+    if (!head)
+      return 0;
     return count(*head);
   }
 };
@@ -292,6 +299,11 @@ public:
   static void drop(T& t) noexcept { _Pooled::Stub::drop(t); }
 
   /**
+   * @brief 清空 t 之后的所有资源，t 必须未被锁定。
+   */
+  static void clear(T& t) noexcept { _Pooled::Stub::drop(t); }
+
+  /**
    * @brief 从节点 t 开始遍历池中的剩余资源。
    */
   static Iterator begin(T& t) noexcept { return { t.shared_from_this() }; }
@@ -332,6 +344,11 @@ public:
   {
     _Pooled::Stub::give(*mStub, std::move(r));
   }
+
+  /**
+   * @see drop(Pooled&)
+   */
+  void clear() noexcept { _Pooled::Stub::clear(*mStub); }
 
   /**
    * @see begin(const Pooled&)

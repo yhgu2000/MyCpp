@@ -50,6 +50,12 @@ BOOST_AUTO_TEST_CASE(basic)
 
   BOOST_TEST(pool.take_if<SubRC>() == rc3);
   BOOST_TEST(pool.take() == rc2);
+
+  pool.give(rc3);
+  pool.give(rc2);
+  pool.give(rc1);
+  pool.clear();
+  BOOST_TEST(pool.count() == 0);
 }
 
 BOOST_AUTO_TEST_CASE(concurrent)
@@ -69,8 +75,12 @@ BOOST_AUTO_TEST_CASE(concurrent)
   }
 
   for (auto i = threads.size(); --i != SIZE_MAX;) {
-    for (auto& rc : pool)
-      BOOST_TEST(rc.mI >= 0);
+    if (i & 1) {
+      pool.clear();
+    } else {
+      for (auto& rc : pool)
+        BOOST_TEST(rc.mI >= 0);
+    }
   }
 
   for (auto& t : threads)
