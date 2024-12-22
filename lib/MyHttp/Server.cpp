@@ -61,9 +61,11 @@ Server::stop()
 void
 Server::do_accept()
 {
-  mAcpt.async_accept(mAcpt.get_executor(), [this](auto&& a, auto&& b) {
-    on_accept(a, std::move(b));
-  });
+  // 在绝大部分应用场景中，Socket 都不会被并行使用，而且 Socket、bb::tcp_stream
+  // 等类都不是线程安全的，因此我们直接一刀切在这里就创建新的 strand
+  // 来绑定到即将到来的 Socket 上。
+  mAcpt.async_accept(ba::make_strand(mEx),
+                     [this](auto&& a, auto b) { on_accept(a, std::move(b)); });
 }
 
 void

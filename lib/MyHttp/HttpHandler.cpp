@@ -20,13 +20,7 @@ void
 HttpHandler::stop()
 {
   BOOST_LOG_SEV(mLogger, verb) << "stop: " << strsock(mStream.socket());
-  BoostEC ec;
-  mStream.socket().cancel(ec);
-  if (ec)
-    BOOST_LOG_SEV(mLogger, noti) << "cancel failed: " << ec.message();
-  mStream.socket().close(ec);
-  if (ec)
-    BOOST_LOG_SEV(mLogger, noti) << "close failed: " << ec.message();
+  mStream.cancel(), mStream.close();
 }
 
 void
@@ -76,7 +70,7 @@ HttpHandler::on_read(const BoostEC& ec, std::size_t len)
   if (ec) {
     if (ec == http::error::end_of_stream)
       do_close("eof");
-    else if (ec == bb::error::timeout)
+    else if (ec == bb::error::timeout || ec == ba::error::operation_aborted)
       BOOST_LOG_SEV(mLogger, verb) << "read timeout";
     else
       BOOST_LOG_SEV(mLogger, info) << "read failed: " << ec.message();

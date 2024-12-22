@@ -25,18 +25,12 @@ private:
 
 class HttpHelloWorld::Server : public MyHttp::Server
 {
-  HttpHandler::Config& mConfig;
-
   void come(Socket&& sock) override;
 
 public:
-  Server(HttpHandler::Config& config,
-         Executor ex,
-         std::string logName = "MyHttp::HttpHelloWorld::Server")
-    : MyHttp::Server(std::move(ex), std::move(logName))
-    , mConfig(config)
-  {
-  }
+  HttpHandler::Config mConfig;
+  
+  using MyHttp::Server::Server;
 };
 
 } // namespace MyHttp
