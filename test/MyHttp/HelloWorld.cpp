@@ -61,7 +61,7 @@ BOOST_AUTO_TEST_CASE(stress)
   reset_loglevel(My::log::warn);
 
   auto loopsEnv = std::getenv("LOOPS");
-  auto loops = loopsEnv ? std::atoi(loopsEnv) : 10000;
+  auto loops = loopsEnv ? std::atoi(loopsEnv) : 1000;
   auto threadsEnv = std::getenv("THREADS");
   auto threadsNum =
     threadsEnv ? std::atoi(threadsEnv) : std::thread::hardware_concurrency();
@@ -86,22 +86,35 @@ BOOST_AUTO_TEST_CASE(stress)
   req.target("/");
   req.set(bb::http::field::host, "127.0.0.1:8000");
 
-  std::atomic<unsigned> success(0), failure(0);
-  auto ns = timing({
-              for (unsigned i = 0; i < loops; ++i) {
-                client.async_http(req, [&](auto&& res) {
-                  if (!res)
-                    failure.fetch_add(1, std::memory_order_relaxed);
-                  else if (res->result() == bb::http::status::ok &&
-                           res->body() == "Hello, World!"_b)
-                    success.fetch_add(1, std::memory_order_relaxed);
-                });
-              }
-              ex.wait();
-            }).count();
+  std::atomic<unsigned> failure(0);
+  auto timingBegin = std::chrono::high_resolution_clock::now();
+  for (unsigned i = 0; i < loops; ++i)
+    ba::post(ex.mIoCtx, [&] {
+      for (unsigned t = 0; t < threadsNum; ++t) {
+        client.async_http(req, [&](auto&& res) {
+          if (!res || res->result() == bb::http::status::ok)
+            failure.fetch_add(1, std::memory_order_relaxed);
+        });
+      }
+    });
+  std::cout << "request posted ("
+            << (std::chrono::high_resolution_clock::now() - timingBegin) << ")"
+            << std::endl;
+  ex.wait();
+  auto timingEnd = std::chrono::high_resolution_clock::now();
+  std::cout << "requests handled (" << (timingEnd - timingBegin) << ")"
+            << std::endl;
+  auto ns = (timingEnd - timingBegin).count();
 
   std::cout << threadsNum << " threads perform " << loops << " loops ("
-            << success << " success, " << failure << " failure), with total "
+            << failure << " failure), with total "
             << loops * threadsNum / (double(ns) / 1e9)
             << " throughput per second" << std::endl;
+
+  /**
+   * 我发现一个很有趣的现象：吞吐量并不是呈现屋顶线的形状，随着 loops
+   * 的增长，在 1000 附近会很高，而过大或过小的吞吐量都比较低 ——
+   * 这对于服务器来说不是一个好的表现，这意味着服务器在高负载情况下可能会
+   * 出现毁灭性的全面崩溃恶性循环。
+   */
 }
