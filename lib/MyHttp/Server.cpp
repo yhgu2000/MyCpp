@@ -14,25 +14,25 @@ Server::start(const Endpoint& endpoint, int backlog)
   BoostEC ec;
   mAcpt.open(endpoint.protocol(), ec);
   if (ec) {
-    BOOST_LOG_SEV(mLogger, verb) << "open failed: " << ec.message();
+    BOOST_LOG_SEV(mLogger, info) << "open failed: " << ec.message();
     return ec;
   }
 
   mAcpt.set_option(ba::socket_base::reuse_address(true), ec);
   if (ec) {
-    BOOST_LOG_SEV(mLogger, verb) << "set_option failed: " << ec.message();
+    BOOST_LOG_SEV(mLogger, info) << "set_option failed: " << ec.message();
     return ec;
   }
 
   mAcpt.bind(endpoint, ec);
   if (ec) {
-    BOOST_LOG_SEV(mLogger, verb) << "bind failed: " << ec.message();
+    BOOST_LOG_SEV(mLogger, info) << "bind failed: " << ec.message();
     return ec;
   }
 
   mAcpt.listen(backlog, ec);
   if (ec) {
-    BOOST_LOG_SEV(mLogger, verb) << "listen failed: " << ec.message();
+    BOOST_LOG_SEV(mLogger, info) << "listen failed: " << ec.message();
     return ec;
   }
 
@@ -63,7 +63,7 @@ Server::on_accept(const BoostEC& ec, Socket&& sock)
 {
   if (ec) {
     if (ec != ba::error::operation_aborted)
-      BOOST_LOG_SEV(mLogger, verb) << "accept failed: " << ec.message();
+      BOOST_LOG_SEV(mLogger, info) << "accept failed: " << ec.message();
     return;
   }
   BOOST_LOG_SEV(mLogger, verb) << "accepted " << sock.remote_endpoint();

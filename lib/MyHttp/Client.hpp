@@ -70,6 +70,11 @@ public:
    */
   void async_http(Request req, std::function<void(BoostResult<Response>&&)> cb);
 
+  /**
+   * @brief 清空连接池。
+   */
+  void clear_connections() { mConnPool.clear(); }
+
 private:
   MYHTTP_CLIENT_PRIVATE
 

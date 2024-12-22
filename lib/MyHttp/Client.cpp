@@ -20,10 +20,10 @@ close_gracefully(Socket& socket, My::log::Logger& logger)
   BoostEC ec;
   socket.shutdown(Socket::shutdown_both, ec);
   if (ec)
-    BOOST_LOG_SEV(logger, warn) << "shutdown failed: " << ec.message();
+    BOOST_LOG_SEV(logger, noti) << "shutdown failed: " << ec.message();
   socket.close(ec);
   if (ec)
-    BOOST_LOG_SEV(logger, warn) << "close failed: " << ec.message();
+    BOOST_LOG_SEV(logger, noti) << "close failed: " << ec.message();
   // 这里显式地优雅关闭套接字，在出错情况下，boost::asio::ip::tcp::socket
   // 的析构函数会自动关闭套接字，不用担心资源泄漏的问题。
 }
@@ -146,7 +146,7 @@ private:
                   const ba::ip::tcp::resolver::results_type& results) noexcept
   {
     if (ec) {
-      BOOST_LOG_SEV(mLogger, warn) << "resolve failed: " << ec.message();
+      BOOST_LOG_SEV(mLogger, noti) << "resolve failed: " << ec.message();
       return;
     }
     BOOST_LOG_SEV(mLogger, verb)
@@ -174,7 +174,7 @@ private:
   {
     if (ec) {
       if (mRetry >= _.mConfig.mMaxRetry) {
-        BOOST_LOG_SEV(mLogger, warn) << "connect failed: " << ec.message();
+        BOOST_LOG_SEV(mLogger, noti) << "connect failed: " << ec.message();
         return;
       }
 
@@ -213,7 +213,7 @@ private:
   {
     if (ec) {
       if (mRetry >= _.mConfig.mMaxRetry) {
-        BOOST_LOG_SEV(mLogger, warn) << "write failed: " << ec.message();
+        BOOST_LOG_SEV(mLogger, noti) << "write failed: " << ec.message();
         return;
       }
 
@@ -246,7 +246,7 @@ private:
   void on_read(const BoostEC& ec, std::size_t len) noexcept
   {
     if (ec) {
-      BOOST_LOG_SEV(mLogger, warn) << "read failed: " << ec.message();
+      BOOST_LOG_SEV(mLogger, noti) << "read failed: " << ec.message();
       return;
       // 如果读取响应失败，就不能再重试了，因为数据已经发出了，服务器状态可能已经改变。
     }
@@ -285,7 +285,7 @@ Client::http(Request& req) noexcept
     conn->mTimer.expires_after(mConfig.mTimeout);
     auto results = conn->mResolver.resolve(mConfig.mHost, mConfig.mPort, ec);
     if (ec) {
-      BOOST_LOG_SEV(logger, warn) << "resolve failed: " << ec.message();
+      BOOST_LOG_SEV(logger, noti) << "resolve failed: " << ec.message();
       return ec;
     }
     conn->mTimer.cancel();
@@ -304,7 +304,7 @@ Client::http(Request& req) noexcept
     conn->mTimer.expires_after(mConfig.mTimeout);
     conn->mSocket.connect(*results, ec);
     if (ec) {
-      BOOST_LOG_SEV(logger, warn) << "connect failed: " << ec.message();
+      BOOST_LOG_SEV(logger, noti) << "connect failed: " << ec.message();
       return ec;
     }
     conn->mTimer.cancel();
@@ -324,7 +324,7 @@ Client::http(Request& req) noexcept
   conn->mTimer.expires_after(mConfig.mTimeout);
   auto reqSize = http::write(conn->mSocket, req, ec);
   if (ec) {
-    BOOST_LOG_SEV(logger, warn) << "write failed: " << ec.message();
+    BOOST_LOG_SEV(logger, noti) << "write failed: " << ec.message();
     return ec;
   }
   conn->mTimer.cancel();
@@ -344,7 +344,7 @@ Client::http(Request& req) noexcept
   Response res;
   auto resSize = http::read(conn->mSocket, buf, res, ec);
   if (ec) {
-    BOOST_LOG_SEV(logger, warn) << "read failed: " << ec.message();
+    BOOST_LOG_SEV(logger, noti) << "read failed: " << ec.message();
     return ec;
   }
   auto now = StdHRC::now();

@@ -23,10 +23,10 @@ HttpHandler::stop()
   BoostEC ec;
   mStream.socket().cancel(ec);
   if (ec)
-    BOOST_LOG_SEV(mLogger, warn) << "cancel failed: " << ec.message();
+    BOOST_LOG_SEV(mLogger, noti) << "cancel failed: " << ec.message();
   mStream.socket().close(ec);
   if (ec)
-    BOOST_LOG_SEV(mLogger, warn) << "close failed: " << ec.message();
+    BOOST_LOG_SEV(mLogger, noti) << "close failed: " << ec.message();
 }
 
 void
@@ -42,13 +42,15 @@ HttpHandler::on_handle(std::exception_ptr eptr) noexcept
       errstr = "\n"s + e.what() + " | " + e.info();
     } catch (std::exception& e) {
       errstr = "\n"s + e.what();
+    } catch (...) {
+      errstr = "\nUNKNOWN ERROR";
     }
     mResponse.result(http::status::internal_server_error);
     mResponse.clear();
     mResponse.body() = to_bytes(errstr);
   }
 
-  BOOST_LOG_SEV(mLogger, errstr.empty() ? info : verb)
+  BOOST_LOG_SEV(mLogger, errstr.empty() ? verb : info)
     << mRequest.method() << ' ' << mRequest.target() << " --" << mKeepAliveCount
     << "-> " << mResponse.result_int() << " : "
     << to_string(timingEnd - mTimingHandleBegin) << errstr;
@@ -77,7 +79,7 @@ HttpHandler::on_read(const BoostEC& ec, std::size_t len)
     else if (ec == bb::error::timeout)
       BOOST_LOG_SEV(mLogger, verb) << "read timeout";
     else
-      BOOST_LOG_SEV(mLogger, warn) << "read failed: " << ec.message();
+      BOOST_LOG_SEV(mLogger, info) << "read failed: " << ec.message();
     return;
   }
 
@@ -118,7 +120,7 @@ void
 HttpHandler::on_write(const BoostEC& ec, std::size_t len)
 {
   if (ec) {
-    BOOST_LOG_SEV(mLogger, warn) << "write failed: " << ec.message();
+    BOOST_LOG_SEV(mLogger, info) << "write failed: " << ec.message();
     return;
   }
 
@@ -137,7 +139,7 @@ HttpHandler::do_close(const char* reason)
   BoostEC ec;
   mStream.socket().shutdown(ba::ip::tcp::socket::shutdown_both, ec);
   if (ec) {
-    BOOST_LOG_SEV(mLogger, warn) << "shutdown failed: " << ec.message();
+    BOOST_LOG_SEV(mLogger, info) << "shutdown failed: " << ec.message();
     return;
   }
 

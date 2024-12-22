@@ -54,6 +54,8 @@ protected:
   {
   }
 
+  virtual ~HttpHandler() = default;
+
   /**
    * @brief 在子类中实现请求的处理回调。
    *
