@@ -44,8 +44,16 @@ Server::start(const Endpoint& endpoint, int backlog)
 void
 Server::stop()
 {
-  ba::post(mAcpt.get_executor(), [this] {
-    mAcpt.cancel(), mAcpt.close();
+  // mAcpt.cancel、mAcpt.close 等都不是线程安全的，因此使用 post 将任务提交到
+  // mAcpt 的执行器上，而初始化时的 ba::make_strand 保证了这些操作会被顺序执行。
+  ba::post(mAcpt.get_executor(), [this]() {
+    BoostEC ec;
+    mAcpt.cancel(ec);
+    if (ec)
+      BOOST_LOG_SEV(mLogger, noti) << "cancel failed: " << ec.message();
+    mAcpt.close(ec);
+    if (ec)
+      BOOST_LOG_SEV(mLogger, noti) << "close failed: " << ec.message();
     BOOST_LOG_SEV(mLogger, noti) << "stopped";
   });
 }

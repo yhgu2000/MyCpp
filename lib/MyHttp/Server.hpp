@@ -19,7 +19,7 @@ class Server
 public:
   Server(Executor ex, std::string logName = "MyHttp::Server")
     : mLogger(std::move(logName), this)
-    , mAcpt(std::move(ex))
+    , mAcpt(ba::make_strand(std::move(ex)))
   {
   }
 
