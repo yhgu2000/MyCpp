@@ -26,11 +26,13 @@ ThreadsExecutor::start()
   if (mThreads.front().joinable())
     return false;
 
+  mIoCtx.get_executor().on_work_started();
+  // 防止 mIoCtx.run() 在没有工作的情况下立即返回。
+
   for (auto& thread : mThreads)
     thread = std::thread([this] {
       while (true)
         try {
-          auto guard = ba::make_work_guard(mIoCtx);
           mIoCtx.run();
           break;
         } catch (My::Err& e) {
@@ -41,7 +43,6 @@ ThreadsExecutor::start()
           BOOST_LOG_SEV(mLogger, fatal) << "UNKNOWN EXCEPTION";
         }
     });
-
   BOOST_LOG_SEV(mLogger, noti) << "started";
   return true;
 }
@@ -52,11 +53,26 @@ ThreadsExecutor::stop()
   if (!mThreads.front().joinable())
     return false;
 
+  mIoCtx.get_executor().on_work_finished();
   mIoCtx.stop();
   for (auto&& thread : mThreads)
     thread.join();
 
   BOOST_LOG_SEV(mLogger, noti) << "stopped";
+  return true;
+}
+
+bool
+ThreadsExecutor::wait()
+{
+  if (!mThreads.front().joinable())
+    return false;
+
+  mIoCtx.get_executor().on_work_finished();
+  for (auto&& thread : mThreads)
+    thread.join();
+
+  BOOST_LOG_SEV(mLogger, noti) << "waited";
   return true;
 }
 

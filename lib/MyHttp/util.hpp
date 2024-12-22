@@ -72,8 +72,8 @@ class ThreadsExecutor
 public:
   ba::io_context mIoCtx;
 
-  ThreadsExecutor(int threads, const char* loggerName = "ThreadsExecutor")
-    : mLogger(loggerName, this)
+  ThreadsExecutor(int threads, std::string logName = "MyHttp::ThreadsExecutor")
+    : mLogger(std::move(logName), this)
     , mIoCtx(threads)
     , mThreads(threads)
   {
@@ -99,6 +99,13 @@ public:
    * @return 停止成功返回 true，若已停止则返回 false。
    */
   bool stop();
+
+  /**
+   * @brief 阻塞等待所有工作完成，然后停止执行器。
+   *
+   * @return 停止成功返回 true，若已停止则返回 false。
+   */
+  bool wait();
 
 private:
   My::log::LoggerMt mLogger;

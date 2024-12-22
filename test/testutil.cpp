@@ -23,6 +23,12 @@ init_loglevel(int logLevel)
     });
 }
 
+void
+reset_loglevel(int logLevel)
+{
+  gLogLevel = logLevel;
+}
+
 namespace randgen {
 
 thread_local std::default_random_engine gRand{ std::random_device()() };
