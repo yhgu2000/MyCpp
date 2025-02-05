@@ -365,4 +365,35 @@ Client::async_http(Request req, std::function<void(BoostResult<Response>&&)> cb)
             req = std::move(req)]() mutable { x->exec(std::move(req)); });
 };
 
+bj::value
+Client::Config::to_jval() const noexcept
+{
+  bj::object jobj;
+  jobj.emplace("Host", mHost);
+  jobj.emplace("Port", mPort);
+  jobj.emplace("BufferLimit", mBufferLimit);
+  jobj.emplace(
+    "Timeout",
+    std::chrono::duration_cast<std::chrono::milliseconds>(mTimeout).count());
+  jobj.emplace("MaxRetry", mMaxRetry);
+  jobj.emplace(
+    "KeepAliveTimeout",
+    std::chrono::duration_cast<std::chrono::milliseconds>(mKeepAliveTimeout)
+      .count());
+  return { std::move(jobj) };
+}
+
+void
+Client::Config::jval_to(const bj::value& jval)
+{
+  auto& jobj = jval.as_object();
+  mHost = jobj.at("Host").as_string();
+  mPort = jobj.at("Port").as_string();
+  mBufferLimit = jobj.at("BufferLimit").as_uint64();
+  mTimeout = std::chrono::milliseconds(jobj.at("Timeout").as_uint64());
+  mMaxRetry = jobj.at("MaxRetry").as_uint64();
+  mKeepAliveTimeout =
+    std::chrono::milliseconds(jobj.at("KeepAliveTimeout").as_uint64());
+}
+
 } // namespace MyHttp

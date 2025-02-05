@@ -28,3 +28,19 @@ target_link_libraries(app PUBLIC timestamp My Boost::program_options)
 add_executable(my-statistics my-statistics.cpp)
 
 target_link_libraries(my-statistics PUBLIC timestamp My Boost::program_options)
+
+#
+# MyHttp 服务器
+#
+add_executable(myhttp-client myhttp-client.cpp)
+
+target_link_libraries(myhttp-client
+  PUBLIC timestamp My Boost::program_options MyHttp)
+
+#
+# MyHttp 客户端
+#
+add_executable(myhttp-server myhttp-server.cpp)
+
+target_link_libraries(myhttp-server
+  PUBLIC timestamp My Boost::program_options MyHttp)

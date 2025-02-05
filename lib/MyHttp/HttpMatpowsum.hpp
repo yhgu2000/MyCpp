@@ -1,6 +1,7 @@
 #pragma once
 
 #include "HttpHandler.hpp"
+#include "Server.hpp"
 
 namespace MyHttp {
 
@@ -13,13 +14,27 @@ namespace MyHttp {
 class HttpMatpowsum : public HttpHandler
 {
 public:
-  HttpMatpowsum(Socket&& sock, Config& config)
-    : HttpHandler(std::move(sock), config, "HttpMatpowsum")
+  class Server;
+
+  HttpMatpowsum(Socket&& sock,
+                Config& config,
+                std::string logName = "MyHttp::HttpMatpowsum")
+    : HttpHandler(std::move(sock), config, std::move(logName))
   {
   }
 
 private:
   void do_handle() noexcept override;
+};
+
+class HttpMatpowsum::Server : public MyHttp::Server
+{
+  void come(Socket&& sock) override;
+
+public:
+  HttpHandler::Config mConfig;
+
+  using MyHttp::Server::Server;
 };
 
 } // namespace MyHttp

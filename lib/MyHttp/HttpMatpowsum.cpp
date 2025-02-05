@@ -115,4 +115,10 @@ HttpMatpowsum::do_handle() noexcept
   on_handle(nullptr);
 }
 
+void
+HttpMatpowsum::Server::come(Socket&& sock)
+{
+  std::make_shared<HttpMatpowsum>(std::move(sock), mConfig)->start();
+}
+
 } // namespace MyHttp

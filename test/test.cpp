@@ -19,7 +19,7 @@ BOOST_TEST_GLOBAL_FIXTURE(GlobalFixture);
 
 BOOST_AUTO_TEST_CASE(example)
 {
-  BOOST_TEST(false);   // 在失败后会继续执行
+  // BOOST_TEST(false);// 在失败后会继续执行
   BOOST_REQUIRE(true); // 在失败后执行会中止
 }
 

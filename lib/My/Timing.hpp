@@ -143,9 +143,9 @@ public:
   Clock::time_point initial() const noexcept;
 
   /**
-   * @brief 导出到 JSON。
+   * @brief 导出到 JSON 值对象。
    */
-  bj::value to_json() const noexcept(false);
+  bj::value to_jval() const noexcept(false);
 
 public:
   ///@name 迭代器。

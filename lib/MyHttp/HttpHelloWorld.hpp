@@ -14,8 +14,10 @@ class HttpHelloWorld : public HttpHandler
 public:
   class Server;
 
-  HttpHelloWorld(Socket&& sock, Config& config)
-    : HttpHandler(std::move(sock), config, "MyHttp::HttpHelloWorld")
+  HttpHelloWorld(Socket&& sock,
+                 Config& config,
+                 std::string logName = "MyHttp::HttpHelloWorld")
+    : HttpHandler(std::move(sock), config, std::move(logName))
   {
   }
 
@@ -29,7 +31,7 @@ class HttpHelloWorld::Server : public MyHttp::Server
 
 public:
   HttpHandler::Config mConfig;
-  
+
   using MyHttp::Server::Server;
 };
 

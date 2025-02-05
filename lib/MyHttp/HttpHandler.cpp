@@ -142,4 +142,30 @@ HttpHandler::do_close(const char* reason)
     << "done: " << reason << " (" << to_string(timingEnd - mTimingBegin) << ")";
 }
 
+bj::value
+HttpHandler::Config::to_jval() const noexcept
+{
+  bj::object jobj;
+  jobj.emplace("BufferLimit", mBufferLimit);
+  jobj.emplace("KeepAliveTimeout", mKeepAliveTimeout);
+  if (mKeepAliveMax != UINT32_MAX)
+    jobj.emplace("KeepAliveMax", mKeepAliveMax);
+  else
+    jobj.emplace("KeepAliveMax", nullptr);
+  return { std::move(jobj) };
+}
+
+void
+HttpHandler::Config::jval_to(const bj::value& jval)
+{
+  auto& jobj = jval.as_object();
+  mBufferLimit = jobj.at("BufferLimit").as_int64();
+  mKeepAliveTimeout = jobj.at("KeepAliveTimeout").as_int64();
+  auto& keepAliveMax = jobj.at("KeepAliveMax");
+  if (keepAliveMax.is_null())
+    mKeepAliveMax = UINT32_MAX;
+  else
+    mKeepAliveMax = keepAliveMax.as_int64();
+}
+
 } // namespace MyHttp

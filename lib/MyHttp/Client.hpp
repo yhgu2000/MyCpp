@@ -9,10 +9,12 @@
 #include <My/Pooled.hpp>
 #include <My/log.hpp>
 #include <atomic>
+#include <boost/json.hpp>
 
 namespace MyHttp {
 
 using namespace util;
+namespace bj = boost::json;
 
 /**
  * @brief 客户端类，实现了 TCP 连接复用。
@@ -22,18 +24,23 @@ class Client
 public:
   struct Config
   {
-    // 目标服务器地址
+    /// 目标服务器地址
     std::string mHost;
-    // 目标服务器端口
+    /// 目标服务器端口
     std::string mPort;
     /// 每个会话的缓冲区大小
     std::size_t mBufferLimit{ 8 << 10 };
-    // 连接超时限制，超时未连接成功则重试
+    /// 连接超时限制，超时未连接成功则重试
     ba::steady_timer::duration mTimeout = std::chrono::seconds(3);
-    // 请求重试次数，超出则视为失败
+    /// 请求重试次数，超出则视为失败
     std::uint32_t mMaxRetry{ 1 };
-    // 保活超时限制，超时无活动的连接会被关闭
+    /// 保活超时限制，超时无活动的连接会被关闭
     ba::steady_timer::duration mKeepAliveTimeout = std::chrono::seconds(3);
+
+    /// 转换到 JSON 值对象
+    bj::value to_jval() const noexcept;
+    /// 从 JSON 值对象设置，出错时返回非空异常指针
+    void jval_to(const bj::value& jval) noexcept(false);
   };
 
   // 异步执行器

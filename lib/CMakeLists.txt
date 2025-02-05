@@ -28,7 +28,8 @@ file(GLOB _src MyHttp/*)
 
 add_library(MyHttp ${_src})
 
-target_link_libraries(MyHttp PUBLIC My)
+find_package(Boost REQUIRED COMPONENTS url)
+target_link_libraries(MyHttp PUBLIC My Boost::url)
 
 install(TARGETS MyHttp EXPORT ${EXPORT_TARGETS})
 install(

@@ -3,10 +3,12 @@
 #include "util.hpp"
 
 #include <My/log.hpp>
+#include <boost/json.hpp>
 
 namespace MyHttp {
 
 using namespace util;
+namespace bj = boost::json;
 
 /**
  * @brief HTTP/1.1 处理器，实现了 Keep-Alive 机制。
@@ -22,6 +24,11 @@ public:
     std::uint32_t mKeepAliveTimeout{ 3 };
     /// 保活次数限制，超过次数的连接会被关闭，UINT32_MAX 表示无限制
     std::uint32_t mKeepAliveMax{ UINT32_MAX };
+
+    /// 转换到 JSON 值对象
+    bj::value to_jval() const noexcept;
+    /// 从 JSON 值对象设置，出错时抛出异常
+    void jval_to(const bj::value& jval) noexcept(false);
   };
 
   /**

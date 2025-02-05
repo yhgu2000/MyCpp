@@ -100,7 +100,7 @@ Timing::operator()(const char* tag, Info* info, bool owned) noexcept
 }
 
 bj::value
-Timing::to_json() const noexcept(false)
+Timing::to_jval() const noexcept(false)
 {
   bj::array arr;
 
